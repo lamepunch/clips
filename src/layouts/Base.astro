@@ -1,0 +1,71 @@
+---
+interface Props {
+  title?: string;
+}
+const { title = "Clips" } = Astro.props;
+const { user } = Astro.locals;
+---
+
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>{title}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style is:global>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        background: light-dark(#fff, #121212);
+        color: light-dark(#1a1a1a, #e8e8e8);
+      }
+      a {
+        color: light-dark(#0b5bd3, #3485ff);
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header style="display:flex; gap:1rem; align-items:center; padding:1rem;">
+      <a href="/">Lamepunch</a>
+      {
+        user ? (
+          <>
+            <a href="/upload">Upload</a>
+            <a href={`/${user.slug}`}>My profile</a>
+            <button type="button" id="sign-out">
+              Sign out
+            </button>
+          </>
+        ) : (
+          <button type="button" id="sign-in">
+            Sign in with Discord
+          </button>
+        )
+      }
+    </header>
+
+    <script>
+      import { authClient } from "@/lib/authClient";
+
+      document.querySelector("#sign-in")?.addEventListener("click", () => {
+        authClient.signIn.social({
+          provider: "discord",
+          callbackURL: location.pathname,
+        });
+      });
+
+      document
+        .querySelector("#sign-out")
+        ?.addEventListener("click", async () => {
+          await authClient.signOut();
+          location.href = "/";
+        });
+    </script>
+    <main style="max-width:720px; margin:0 auto; padding:1rem;">
+      <slot />
+    </main>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+---
+import Base from "@/layouts/Base.astro";
+import { user } from "@/db/schema";
+
+const { db, session } = Astro.locals;
+const loggedIn = !!session;
+
+const l = loggedIn
+  ? await db
+      .select({
+        id: user.id,
+        name: user.name,
+        slug: user.slug,
+        image: user.image,
+      })
+      .from(user)
+  : [];
+---
+
+<Base title="Clips">
+  {
+    !loggedIn ? (
+      <p>Sign in to view clips.</p>
+    ) : (
+      <>
+        <h1>Users</h1>
+        <ul style="list-style:none; padding:0;">
+          {l.map((u) => (
+            <li style="margin-bottom:0.5rem;">
+              <a
+                href={`/${u.slug}`}
+                style="display:flex; gap:0.5rem; align-items:center;"
+              >
+                {u.image && (
+                  <img
+                    src={u.image}
+                    alt=""
+                    width="32"
+                    height="32"
+                    loading="lazy"
+                    style="border-radius:50%;"
+                  />
+                )}
+                {u.slug}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+</Base>

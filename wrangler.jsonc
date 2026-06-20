@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clips",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "clips",
+      "database_id": "46dbdf0f-14f0-4365-abc5-f1407174e1c9",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "vars": {
+    "BETTER_AUTH_URL": "https://clips.grenuttag.workers.dev",
+    "DISCORD_CLIENT_ID": "1515719095725592616",
+    "TWITCH_CLIENT_ID": "4askw7cdi77qj6pyjj8idphtt5twdm",
+    "ALLOWED_GUILD_IDS": "829607606867066911,1366639791805825054",
+    "CF_ACCOUNT_ID": "47340d2482cf30a19cdbc53419a37a3d",
+    "STREAM_CODE": "2fz8enzwwdbcd9v9",
+  },
+}

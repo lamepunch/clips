@@ -1,0 +1,57 @@
+---
+import { eq } from "drizzle-orm";
+import Base from "@/layouts/Base.astro";
+import { clips } from "@/db/schema";
+
+const { db, user } = Astro.locals;
+if (!user) return Astro.redirect("/");
+
+const { id } = Astro.params;
+
+const c = id
+  ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
+  : undefined;
+
+if (!c) return new Response("Not found", { status: 404 });
+if (c.userId !== user.id) return new Response("Forbidden", { status: 403 });
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const occurred = String(form.get("occurredAt") ?? "");
+
+  await db
+    .update(clips)
+    .set({
+      title: String(form.get("title") ?? ""),
+      description: String(form.get("description") ?? ""),
+      // ponytail: Workers run in UTC, so the naive datetime-local string round-trips
+      // as UTC. Add explicit tz handling if users span timezones and it matters.
+      occurredAt: occurred ? new Date(occurred) : null,
+    })
+    .where(eq(clips.id, c.id));
+  return Astro.redirect(`/watch/${c.id}`);
+}
+
+const occurredValue = c.occurredAt
+  ? c.occurredAt.toISOString().slice(0, 16)
+  : undefined;
+---
+
+<Base title="Edit">
+  <h1>Edit</h1>
+  <form method="POST" style="display:grid; gap:1rem; max-width:480px;">
+    <label>
+      Title
+      <input type="text" name="title" value={c.title} />
+    </label>
+    <label>
+      Description
+      <textarea name="description" rows="4">{c.description}</textarea>
+    </label>
+    <label>
+      Occurred at
+      <input type="datetime-local" name="occurredAt" value={occurredValue} />
+    </label>
+    <button type="submit">Save</button>
+  </form>
+</Base>

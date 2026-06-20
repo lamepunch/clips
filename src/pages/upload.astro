@@ -1,0 +1,42 @@
+---
+import Base from "@/layouts/Base.astro";
+import "@uppy/core/css/style.min.css";
+import "@uppy/dashboard/css/style.min.css";
+---
+
+<Base title="Upload a clip">
+  <h1>Upload a clip</h1>
+  <div id="uppy"></div>
+  <p id="status"></p>
+
+  <script>
+    import Uppy from "@uppy/core";
+    import Dashboard from "@uppy/dashboard";
+    import Tus from "@uppy/tus";
+
+    const status = document.querySelector<HTMLParagraphElement>("#status")!;
+
+    const uppy = new Uppy({
+      debug: import.meta.env.DEV,
+      autoProceed: true,
+      restrictions: { maxNumberOfFiles: 1, allowedFileTypes: ["video/*"] },
+    })
+      .use(Dashboard, {
+        inline: true,
+        target: "#uppy",
+        theme: "auto",
+        height: 360,
+        proudlyDisplayPoweredByUppy: false,
+      })
+      // Uppy's Tus plugin POSTs to our relay (/api/upload), which returns the
+      // one-time Stream upload URL via Location; Uppy then uploads the bytes
+      // straight to Stream using the tus protocol.
+      .use(Tus, { endpoint: "/api/upload", chunkSize: 150 * 1024 * 1024 });
+
+    uppy.on("complete", (result) => {
+      status.textContent = result.failed?.length
+        ? "Upload failed. Please try again."
+        : "Uploaded! Processing — it'll appear on your profile shortly.";
+    });
+  </script>
+</Base>

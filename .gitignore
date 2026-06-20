@@ -1,0 +1,11 @@
+# build
+dist/
+.astro/
+
+# deps
+node_modules/
+
+# cloudflare
+.dev.vars
+.wrangler/
+worker-configuration.d.ts

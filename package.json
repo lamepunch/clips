@@ -1,0 +1,32 @@
+{
+  "name": "clips",
+  "type": "module",
+  "version": "2026.6",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "deploy": "astro build && wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply clips --local",
+    "db:migrate:remote": "wrangler d1 migrations apply clips --remote",
+    "auth:generate": "better-auth generate --config src/lib/auth.ts --output src/db/auth-schema.ts"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.6.1",
+    "@uppy/core": "^5.2.0",
+    "@uppy/dashboard": "^5.1.1",
+    "@uppy/tus": "^5.1.1",
+    "astro": "^6.4.4",
+    "better-auth": "^1.6.14",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260607.1",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.98.0"
+  }
+}

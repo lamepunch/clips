@@ -1,0 +1,47 @@
+---
+import { and, desc, eq } from "drizzle-orm";
+import Base from "@/layouts/Base.astro";
+import { clips, user, ClipStatus } from "@/db/schema";
+
+const { db, env } = Astro.locals;
+const { slug } = Astro.params;
+
+const u = slug
+  ? await db.query.user.findFirst({ where: eq(user.slug, slug) })
+  : undefined;
+
+if (!u) {
+  return new Response("Not found", { status: 404 });
+}
+
+const l = await db
+  .select()
+  .from(clips)
+  .where(
+    and(eq(clips.userId, u.id), eq(clips.status, ClipStatus.READY)),
+  )
+  .orderBy(desc(clips.createdAt));
+---
+
+<Base title={`${u.slug} · Clips`}>
+  <h1>{u.slug}</h1>
+  {l.length === 0 && <p>No clips yet.</p>}
+
+  <ul style="list-style:none; padding:0; display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(240px,1fr));">
+    {
+      l.map((c) => (
+        <li>
+          <a href={`/watch/${c.id}`}>
+            <img
+              src={`https://customer-${env.STREAM_CODE}.cloudflarestream.com/${c.uid}/thumbnails/thumbnail.jpg`}
+              alt={c.title || "Clip thumbnail"}
+              loading="lazy"
+              style="width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:4px;"
+            />
+            {c.title && <span>{c.title}</span>}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</Base>

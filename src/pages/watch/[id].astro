@@ -1,0 +1,40 @@
+---
+import { eq } from "drizzle-orm";
+import Base from "@/layouts/Base.astro";
+import { clips, ClipStatus } from "@/db/schema";
+
+const { db, env } = Astro.locals;
+const { id } = Astro.params;
+
+const c = id
+  ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
+  : undefined;
+
+if (!c) {
+  return new Response("Not found", { status: 404 });
+}
+---
+
+<Base title={c.title || "Clip"}>
+  {c.title && <h1>{c.title}</h1>}
+  {
+    c.status === ClipStatus.READY ? (
+      <iframe
+        src={`https://customer-${env.STREAM_CODE}.cloudflarestream.com/${c.uid}/iframe`}
+        style="border:none; width:100%; aspect-ratio:16/9;"
+        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+        allowfullscreen
+      />
+    ) : (
+      <p>This clip is still processing. Please come back later!</p>
+    )
+  }
+  {c.description && <p>{c.description}</p>}
+  {
+    c.userId === Astro.locals.user?.id && (
+      <p>
+        <a href={`/watch/${c.id}/edit`}>Edit</a>
+      </p>
+    )
+  }
+</Base>

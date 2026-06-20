@@ -1,0 +1,12 @@
+# Copy to `.dev.vars` for local `astro dev` / `wrangler dev`. Never commit `.dev.vars`.
+# In production these are set as Worker secrets (through `wrangler put secret`).
+
+# Overrides the production BETTER_AUTH_URL from wrangler.jsonc for local dev.
+BETTER_AUTH_URL="http://localhost:4321"
+BETTER_AUTH_SECRET="generate-with: openssl rand -base64 32"
+
+DISCORD_CLIENT_SECRET=
+TWITCH_CLIENT_SECRET=
+
+STREAM_API_TOKEN=
+STREAM_WEBHOOK_SECRET=
