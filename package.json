@@ -9,7 +9,7 @@
     "preview": "wrangler dev",
     "deploy": "astro build && wrangler deploy",
     "cf-typegen": "wrangler types",
-    "db:generate": "drizzle-kit generate",
+    "db:generate": "drizzle-kit generate --name initial",
     "db:migrate:local": "wrangler d1 migrations apply clips --local",
     "db:migrate:remote": "wrangler d1 migrations apply clips --remote",
     "auth:generate": "better-auth generate --config src/lib/auth.ts --output src/db/auth-schema.ts"

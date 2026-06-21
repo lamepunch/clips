@@ -17,18 +17,27 @@ CREATE TABLE `account` (
 --> statement-breakpoint
 CREATE TABLE `clips` (
 	`id` text PRIMARY KEY NOT NULL,
-	`title` text DEFAULT '' NOT NULL,
 	`user_id` text NOT NULL,
-	`description` text DEFAULT '' NOT NULL,
+	`game_id` text,
 	`uid` text NOT NULL,
+	`title` text DEFAULT '' NOT NULL,
+	`description` text DEFAULT '' NOT NULL,
 	`status` integer DEFAULT 0 NOT NULL,
-	`metadata` text,
 	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`occurred_at` integer,
-	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`game_id`) REFERENCES `games`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `clips_uid_unique` ON `clips` (`uid`);--> statement-breakpoint
+CREATE TABLE `games` (
+	`id` text PRIMARY KEY NOT NULL,
+	`title` text NOT NULL,
+	`igdb_id` integer NOT NULL,
+	`image` text
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `games_igdb_id_unique` ON `games` (`igdb_id`);--> statement-breakpoint
 CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
 	`expires_at` integer NOT NULL,
@@ -45,16 +54,16 @@ CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-
 CREATE TABLE `user` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
+	`slug` text NOT NULL,
 	`email` text NOT NULL,
 	`email_verified` integer DEFAULT false NOT NULL,
 	`image` text,
-	`slug` text NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
 CREATE UNIQUE INDEX `user_slug_unique` ON `user` (`slug`);--> statement-breakpoint
+CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
 CREATE TABLE `verification` (
 	`id` text PRIMARY KEY NOT NULL,
 	`identifier` text NOT NULL,

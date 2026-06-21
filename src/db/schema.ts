@@ -8,11 +8,13 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  /** User defined name that is used on user profile page */
   slug: text("slug").notNull().unique(),
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" })
     .notNull()
     .default(false),
+  /** Avatar URL */
   image: text("image"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
@@ -62,28 +64,61 @@ export const verification = sqliteTable("verification", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
+/**
+ * A video game that exists in the IGDB. Used for categorization of clips.
+ */
+export const games = sqliteTable("games", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  title: text("title").notNull(),
+  /** Pretty URL that */
+  slug: text("slug").unique(),
+  /** IGDB game ID */
+  igdbId: integer("igdb_id").notNull().unique(),
+  /** Cover art displayed on game detail page */
+  image: text("image"),
+});
+
+/**
+ * Video status, should be the same in Cloudflare Stream.
+ *
+ * {@link https://developers.cloudflare.com/api/resources/stream/methods/get Cloudflare Docs}
+ */
 export const ClipStatus = {
   IN_PROGRESS: 0,
   READY: 1,
   ERROR: 2,
 } as const;
 
+/**
+ * A short video hosted on Cloudflare Stream of a game.
+ */
 export const clips = sqliteTable("clips", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  /** Uploader of the clip */
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  /** Game that this clip is from */
+  gameId: text("game_id").references(() => games.id, { onDelete: "set null" }),
+  /** Upload ID in Cloudflare Stream */
   uid: text("uid").notNull().unique(),
+  /** Something hilarious and witty */
   title: text("title").notNull().default(""),
+  /** Insightful commentary of what happens in the clip */
   description: text("description").notNull().default(""),
+  /** Controls whether clip is visible whenever clips are listed */
   status: integer("status").notNull().default(ClipStatus.IN_PROGRESS),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
+  /** Time when this clip occurred or was originally uploaded */
   occurredAt: integer("occurred_at", { mode: "timestamp" }),
 });
 
 export type Clip = typeof clips.$inferSelect;
 export type User = typeof user.$inferSelect;
+export type Game = typeof games.$inferSelect;
