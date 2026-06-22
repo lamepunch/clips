@@ -1,0 +1,18 @@
+---
+import Base from "@/layouts/Base.astro";
+import { adminTables } from "@/lib/admin";
+---
+
+<Base title="Admin">
+  <h1>Admin</h1>
+  <h2>Manage</h2>
+  <ul>
+    {
+      Object.keys(adminTables).map((t) => (
+        <li>
+          <a href={`/admin/${t}`}>{t}</a>
+        </li>
+      ))
+    }
+  </ul>
+</Base>

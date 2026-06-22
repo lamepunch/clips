@@ -1,0 +1,35 @@
+---
+import { getTableColumns } from "drizzle-orm";
+import Base from "@/layouts/Base.astro";
+import AdminFields from "@/components/AdminFields.astro";
+import { formValues, getAdminTable } from "@/lib/admin";
+
+const { db } = Astro.locals;
+const { table: name } = Astro.params;
+const table = getAdminTable(name);
+if (!table) return new Response("Not found", { status: 404 });
+
+let error: string | null = null;
+if (Astro.request.method === "POST") {
+  const values = formValues(table, await Astro.request.formData());
+  try {
+    // ponytail: generic admin over a table union — full typing isn't worth it.
+    await db.insert(table as never).values(values as never);
+    return Astro.redirect(`/admin/${name}`);
+  } catch (err) {
+    error = err instanceof Error ? err.message : String(err);
+  }
+}
+
+const cols = getTableColumns(table);
+---
+
+<Base title={`Admin · new ${name}`}>
+  <p><a href={`/admin/${name}`}>← {name}</a></p>
+  <h1>New {name}</h1>
+  {error && <p style="color:#c00;">{error}</p>}
+  <form method="POST" style="max-width:480px;">
+    <AdminFields cols={cols} />
+    <button type="submit">Create</button>
+  </form>
+</Base>

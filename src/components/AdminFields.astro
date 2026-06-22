@@ -1,0 +1,36 @@
+---
+import type { Column } from "drizzle-orm";
+
+interface Props {
+  cols: Record<string, Column>;
+  row?: Record<string, unknown>;
+}
+const { cols, row } = Astro.props;
+
+// datetime-local wants "YYYY-MM-DDTHH:mm".
+const dt = (v: unknown) =>
+  v instanceof Date ? v.toISOString().slice(0, 16) : "";
+---
+
+{
+  Object.entries(cols)
+    .filter(([, col]) => !col.primary)
+    .map(([key, col]) => {
+      const value = row?.[key];
+      const required = col.notNull && !col.hasDefault;
+      return (
+        <label style="display:block; margin-bottom:0.75rem;">
+          {key}
+          {col.dataType === "boolean" ? (
+            <input type="checkbox" name={key} checked={!!value} />
+          ) : col.dataType === "number" ? (
+            <input type="number" name={key} value={value as number} required={required} />
+          ) : col.dataType === "date" ? (
+            <input type="datetime-local" name={key} value={dt(value)} required={required} />
+          ) : (
+            <input type="text" name={key} value={(value as string) ?? ""} required={required} />
+          )}
+        </label>
+      );
+    })
+}

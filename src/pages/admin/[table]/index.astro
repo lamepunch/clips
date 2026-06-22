@@ -1,0 +1,48 @@
+---
+import { getTableColumns } from "drizzle-orm";
+import Base from "@/layouts/Base.astro";
+import { getAdminTable, primaryKey } from "@/lib/admin";
+
+const { db } = Astro.locals;
+const { table: name } = Astro.params;
+const table = getAdminTable(name);
+if (!table) return new Response("Not found", { status: 404 });
+
+const cols = Object.keys(getTableColumns(table));
+const [pk] = primaryKey(table);
+// ponytail: generic admin over a table union — full typing isn't worth it here.
+const rows = (await db.select().from(table as never)) as Record<
+  string,
+  unknown
+>[];
+---
+
+<Base title={`Admin · ${name}`}>
+  <p><a href="/admin">← Admin</a></p>
+  <h1>{name}</h1>
+  <p><a href={`/admin/${name}/new`}>+ New</a></p>
+
+  <table style="border-collapse:collapse;">
+    <thead>
+      <tr>{cols.map((c) => <th style="text-align:left; padding:0.25rem 0.75rem;">{c}</th>)}</tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row) => (
+          <tr>
+            {cols.map((c) => (
+              <td style="padding:0.25rem 0.75rem;">
+                {c === pk ? (
+                  <a href={`/admin/${name}/${row[pk]}/edit`}>{String(row[c])}</a>
+                ) : (
+                  String(row[c] ?? "")
+                )}
+              </td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  {rows.length === 0 && <p>No rows.</p>}
+</Base>
