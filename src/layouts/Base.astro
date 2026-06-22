@@ -9,7 +9,7 @@ const { user } = Astro.locals;
 <!doctype html>
 <html lang="en-us">
   <head>
-    <title>{title}</title>
+    <title>{title} &middot; Lamepunch</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style is:global>
@@ -35,6 +35,7 @@ const { user } = Astro.locals;
           <>
             <a href="/upload">Upload</a>
             <a href={`/${user.slug}`}>My profile</a>
+            {user.role == "admin" && <a href="/admin">Admin</a>}
             <button type="button" id="sign-out">
               Sign out
             </button>

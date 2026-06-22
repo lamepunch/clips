@@ -16,6 +16,10 @@ export const user = sqliteTable("user", {
     .default(false),
   /** Avatar URL */
   image: text("image"),
+  role: text("role"),
+  banned: integer("banned", { mode: "boolean" }),
+  banReason: text("ban_reason"),
+  banExpires: integer("ban_expires", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
@@ -29,6 +33,7 @@ export const session = sqliteTable("session", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  impersonatedBy: text("impersonated_by"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
@@ -72,7 +77,7 @@ export const games = sqliteTable("games", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   title: text("title").notNull(),
-  /** Pretty URL that */
+  /** Pretty URL that is used for routing to the game detail page */
   slug: text("slug").unique(),
   /** IGDB game ID */
   igdbId: integer("igdb_id").notNull().unique(),

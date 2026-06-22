@@ -33,10 +33,12 @@ CREATE UNIQUE INDEX `clips_uid_unique` ON `clips` (`uid`);--> statement-breakpoi
 CREATE TABLE `games` (
 	`id` text PRIMARY KEY NOT NULL,
 	`title` text NOT NULL,
+	`slug` text,
 	`igdb_id` integer NOT NULL,
 	`image` text
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `games_slug_unique` ON `games` (`slug`);--> statement-breakpoint
 CREATE UNIQUE INDEX `games_igdb_id_unique` ON `games` (`igdb_id`);--> statement-breakpoint
 CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
@@ -45,6 +47,7 @@ CREATE TABLE `session` (
 	`ip_address` text,
 	`user_agent` text,
 	`user_id` text NOT NULL,
+	`impersonated_by` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
@@ -58,6 +61,10 @@ CREATE TABLE `user` (
 	`email` text NOT NULL,
 	`email_verified` integer DEFAULT false NOT NULL,
 	`image` text,
+	`role` text,
+	`banned` integer,
+	`ban_reason` text,
+	`ban_expires` integer,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );

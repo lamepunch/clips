@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin } from "better-auth/plugins";
 import { type DB, schema } from "@/db";
 import { assertGuildMembership, parseAllowedGuildIds } from "./discord";
 
@@ -65,5 +66,8 @@ export function getAuth(env: Env, db: DB) {
         },
       },
     },
+    // Roles: "user" (default) and "admin". Promote a user by setting
+    // user.role = "admin" (SQL, or admin.setRole once an admin exists).
+    plugins: [admin()],
   });
 }

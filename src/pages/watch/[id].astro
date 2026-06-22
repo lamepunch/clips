@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import { clips, ClipStatus } from "@/db/schema";
 
-const { db, env } = Astro.locals;
+const { db, env, user } = Astro.locals;
 const { id } = Astro.params;
 
 const c = id
@@ -31,7 +31,7 @@ if (!c) {
   }
   {c.description && <p>{c.description}</p>}
   {
-    c.userId === Astro.locals.user?.id && (
+    c.userId === user?.id && (
       <p>
         <a href={`/watch/${c.id}/edit`}>Edit</a>
       </p>
