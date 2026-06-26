@@ -1,0 +1,102 @@
+---
+import Base from "@/layouts/Base.astro";
+import { games } from "@/db/schema";
+
+const { request, redirect, locals } = Astro;
+const { db } = locals;
+
+let error: string | null = null;
+if (request.method === "POST") {
+  const form = await request.formData();
+  const igdbId = Number(form.get("igdbId"));
+  const title = String(form.get("title") ?? "").trim();
+  if (!igdbId || !title) {
+    error = "igdbId and title are required.";
+  } else {
+    try {
+      await db.insert(games).values({
+        igdbId,
+        title,
+        slug: String(form.get("slug") ?? "").trim() || null,
+        image: String(form.get("image") ?? "").trim() || null,
+      });
+      return redirect("/admin/games");
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    }
+  }
+}
+---
+
+<Base title="Admin · new game">
+  <p><a href="/admin/games">← games</a></p>
+  <h1>New game</h1>
+  {error && <p style="color:#c00;">{error}</p>}
+
+  <input
+    type="search"
+    id="igdb-search"
+    placeholder="Search IGDB…"
+    autocomplete="off"
+    style="width:100%; max-width:480px;"
+  />
+  <ul id="igdb-results" style="list-style:none; padding:0; max-width:480px;"></ul>
+
+  <form method="POST" style="display:grid; gap:0.75rem; max-width:480px;">
+    <label>Title<input type="text" name="title" id="f-title" required /></label>
+    <label>IGDB ID<input type="number" name="igdbId" id="f-igdbId" required /></label>
+    <label>Slug<input type="text" name="slug" id="f-slug" /></label>
+    <label>Image<input type="url" name="image" id="f-image" /></label>
+    <button type="submit">Create</button>
+  </form>
+
+  <script>
+    type Result = {
+      igdbId: number;
+      title: string;
+      slug: string;
+      image: string | null;
+    };
+
+    const search = document.querySelector<HTMLInputElement>("#igdb-search")!;
+    const list = document.querySelector<HTMLUListElement>("#igdb-results")!;
+    const fields = {
+      title: document.querySelector<HTMLInputElement>("#f-title")!,
+      igdbId: document.querySelector<HTMLInputElement>("#f-igdbId")!,
+      slug: document.querySelector<HTMLInputElement>("#f-slug")!,
+      image: document.querySelector<HTMLInputElement>("#f-image")!,
+    };
+
+    let timer: ReturnType<typeof setTimeout>;
+    search.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(run, 300);
+    });
+
+    async function run() {
+      const q = search.value.trim();
+      if (!q) return (list.innerHTML = "");
+      const res = await fetch(`/api/games/search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) return;
+      const games: Result[] = await res.json();
+
+      list.innerHTML = "";
+      for (const g of games) {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = g.slug ? `${g.title} (${g.slug})` : g.title;
+        btn.addEventListener("click", () => {
+          fields.title.value = g.title;
+          fields.igdbId.value = String(g.igdbId);
+          fields.slug.value = g.slug;
+          fields.image.value = g.image ?? "";
+          list.innerHTML = "";
+          search.value = g.title;
+        });
+        li.appendChild(btn);
+        list.appendChild(li);
+      }
+    }
+  </script>
+</Base>
