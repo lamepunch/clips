@@ -4,6 +4,12 @@
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2025-06-01",
   "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "clips.lamepunch.com",
+      "custom_domain": true,
+    },
+  ],
   "observability": {
     "enabled": true,
   },
@@ -16,7 +22,7 @@
     },
   ],
   "vars": {
-    "BETTER_AUTH_URL": "https://clips.grenuttag.workers.dev",
+    "BETTER_AUTH_URL": "https://clips.lamepunch.com",
     "DISCORD_CLIENT_ID": "1515719095725592616",
     "TWITCH_CLIENT_ID": "4askw7cdi77qj6pyjj8idphtt5twdm",
     "ALLOWED_GUILD_IDS": "829607606867066911,1366639791805825054",

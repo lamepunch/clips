@@ -3,10 +3,11 @@ import { eq } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import { clips } from "@/db/schema";
 
-const { db, user } = Astro.locals;
-if (!user) return Astro.redirect("/");
-
+const { request, redirect } = Astro;
 const { id } = Astro.params;
+const { db, user } = Astro.locals;
+
+if (!user) return Astro.redirect("/");
 
 const c = id
   ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
@@ -15,8 +16,8 @@ const c = id
 if (!c) return new Response("Not found", { status: 404 });
 if (c.userId !== user.id) return new Response("Forbidden", { status: 403 });
 
-if (Astro.request.method === "POST") {
-  const form = await Astro.request.formData();
+if (request.method === "POST") {
+  const form = await request.formData();
   const occurred = String(form.get("occurredAt") ?? "");
 
   await db
@@ -29,7 +30,7 @@ if (Astro.request.method === "POST") {
       occurredAt: occurred ? new Date(occurred) : null,
     })
     .where(eq(clips.id, c.id));
-  return Astro.redirect(`/watch/${c.id}`);
+  return redirect(`/watch/${c.id}`);
 }
 
 const occurredValue = c.occurredAt
