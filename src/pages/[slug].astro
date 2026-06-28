@@ -23,8 +23,8 @@ const l = await db
   .orderBy(desc(clips.createdAt));
 ---
 
-<Base title={`${u.slug} · Clips`}>
-  <h1>{u.slug}</h1>
+<Base title={`${u.name} · Clips`}>
+  <h1>{u.name}</h1>
   {l.length === 0 && <p>No clips yet.</p>}
 
   <ul style="list-style:none; padding:0; display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(240px,1fr));">
