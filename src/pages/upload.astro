@@ -19,7 +19,7 @@ import "@uppy/dashboard/css/style.min.css";
     const uppy = new Uppy({
       debug: import.meta.env.DEV,
       autoProceed: false,
-      restrictions: { allowedFileTypes: ["video/*"] },
+      restrictions: { allowedFileTypes: ["video/*"], maxNumberOfFiles: 4 },
     })
       .use(Dashboard, {
         inline: true,
