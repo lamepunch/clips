@@ -27,9 +27,9 @@ const { user } = Astro.locals;
   </head>
   <body>
     <header class="flex items-center gap-4 p-4 border-b border-border">
-      <a href="/" class="font-semibold">Lamepunch</a>
+      <a href="/" class="font-semibold">Clips</a>
       {
-        user && (
+        user && user.role !== "viewer" && (
           <a href="/upload" class="text-primary hover:underline">
             Upload
           </a>

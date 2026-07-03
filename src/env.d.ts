@@ -19,6 +19,8 @@ declare global {
       DISCORD_CLIENT_ID: string;
       TWITCH_CLIENT_ID: string;
       ALLOWED_GUILD_IDS: string;
+      // Guilds whose members get the read-only "viewer" role.
+      VIEWER_GUILD_IDS: string;
       // Still needed for the REST tus direct-creator upload relay.
       CF_ACCOUNT_ID: string;
       // Stream subdomain code: customer-<CODE>.cloudflarestream.com

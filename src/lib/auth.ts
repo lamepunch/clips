@@ -1,8 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins";
+import { and, eq, isNull, ne, or } from "drizzle-orm";
 import { type DB, schema } from "@/db";
-import { assertGuildMembership, parseAllowedGuildIds } from "./discord";
+import { getGuildRole, parseGuildIds } from "./discord";
 
 export type Auth = ReturnType<typeof getAuth>;
 
@@ -12,16 +13,37 @@ export type Auth = ReturnType<typeof getAuth>;
  * (see src/middleware.ts).
  */
 export function getAuth(env: Env, db: DB) {
-  const allowedGuildIds = parseAllowedGuildIds(env.ALLOWED_GUILD_IDS);
+  const memberGuildIds = parseGuildIds(env.ALLOWED_GUILD_IDS);
+  const viewerGuildIds = parseGuildIds(env.VIEWER_GUILD_IDS);
 
   // Gate every Discord sign-in (first link and subsequent token refreshes) on
   // guild membership, using the access token Better Auth is about to persist.
+  // Member guilds -> "user", viewer guilds -> "viewer" (read-only), neither ->
+  // sign-in rejected. The resolved role is stamped on the user row so it stays
+  // current with guild changes; admins are never downgraded.
   const gate = async (account: {
     providerId?: string | null;
     accessToken?: string | null;
+    userId?: string | null;
   }) => {
     if (account.providerId !== "discord" || !account.accessToken) return;
-    await assertGuildMembership(account.accessToken, allowedGuildIds);
+    const role = await getGuildRole(
+      account.accessToken,
+      memberGuildIds,
+      viewerGuildIds,
+    );
+    if (account.userId) {
+      await db
+        .update(schema.user)
+        .set({ role })
+        .where(
+          and(
+            eq(schema.user.id, account.userId),
+            // NULL role (fresh user) must match too; NULL != 'admin' is NULL in SQL.
+            or(isNull(schema.user.role), ne(schema.user.role, "admin")),
+          ),
+        );
+    }
   };
 
   return betterAuth({

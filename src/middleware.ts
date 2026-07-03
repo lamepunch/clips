@@ -43,5 +43,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return new Response("Forbidden", { status: 403 });
   }
 
+  // Viewers are read-only: no uploads.
+  if (
+    (pathname === "/upload" || pathname === "/api/upload") &&
+    locals.user?.role === "viewer"
+  ) {
+    return pathname.startsWith("/api/")
+      ? new Response("Forbidden", { status: 403 })
+      : redirect("/");
+  }
+
   return next();
 });

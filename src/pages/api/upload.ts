@@ -16,6 +16,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!session || !user) {
     return new Response("Unauthorized", { status: 401 });
   }
+  // Viewers cannot upload videos
+  if (user.role === "viewer") {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const length = request.headers.get("Upload-Length");
   if (!length) {

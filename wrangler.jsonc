@@ -25,7 +25,10 @@
     "BETTER_AUTH_URL": "https://clips.lamepunch.com",
     "DISCORD_CLIENT_ID": "1515719095725592616",
     "TWITCH_CLIENT_ID": "4askw7cdi77qj6pyjj8idphtt5twdm",
+    // Guilds whose members get upload access
     "ALLOWED_GUILD_IDS": "829607606867066911,1366639791805825054",
+    // Guilds whose members get the read-only "viewer" role
+    "VIEWER_GUILD_IDS": "782458281225748560,1208214955468394496",
     "CF_ACCOUNT_ID": "47340d2482cf30a19cdbc53419a37a3d",
     "STREAM_CODE": "2fz8enzwwdbcd9v9",
   },
