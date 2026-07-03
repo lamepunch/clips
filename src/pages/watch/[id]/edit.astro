@@ -1,6 +1,10 @@
 ---
 import { eq } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
+import { Button } from "@/components/starwind/button";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
+import { Textarea } from "@/components/starwind/textarea";
 import { clips } from "@/db/schema";
 
 const { request, redirect } = Astro;
@@ -39,20 +43,27 @@ const occurredValue = c.occurredAt
 ---
 
 <Base title="Edit">
-  <h1>Edit</h1>
-  <form method="POST" style="display:grid; gap:1rem; max-width:480px;">
-    <label>
-      Title
-      <input type="text" name="title" value={c.title} />
-    </label>
-    <label>
-      Description
-      <textarea name="description" rows="4">{c.description}</textarea>
-    </label>
-    <label>
-      Occurred at
-      <input type="datetime-local" name="occurredAt" value={occurredValue} />
-    </label>
-    <button type="submit">Save</button>
+  <h1 class="text-2xl font-bold mb-4">Edit</h1>
+  <form method="POST" class="grid gap-4 max-w-md">
+    <div class="grid gap-2">
+      <Label for="title">Title</Label>
+      <Input type="text" id="title" name="title" value={c.title} />
+    </div>
+    <div class="grid gap-2">
+      <Label for="description">Description</Label>
+      <Textarea id="description" name="description" rows={4}
+        >{c.description}</Textarea
+      >
+    </div>
+    <div class="grid gap-2">
+      <Label for="occurredAt">Occurred at</Label>
+      <Input
+        type="datetime-local"
+        id="occurredAt"
+        name="occurredAt"
+        value={occurredValue}
+      />
+    </div>
+    <Button type="submit" class="justify-self-start">Save</Button>
   </form>
 </Base>

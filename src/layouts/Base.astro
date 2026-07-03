@@ -1,4 +1,16 @@
 ---
+import "@/styles/starwind.css";
+import BrandDiscord from "@tabler/icons/filled/brand-discord.svg";
+import { Button } from "@/components/starwind/button";
+import {
+  Dropdown,
+  DropdownContent,
+  DropdownItem,
+  DropdownLabel,
+  DropdownSeparator,
+  DropdownTrigger,
+} from "@/components/starwind/dropdown";
+
 interface Props {
   title?: string;
 }
@@ -7,45 +19,64 @@ const { user } = Astro.locals;
 ---
 
 <!doctype html>
-<html lang="en-us">
+<html lang="en-us" class="dark">
   <head>
     <title>{title} &middot; Lamepunch</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style is:global>
-      :root {
-        color-scheme: light dark;
-        font-family: system-ui, sans-serif;
-      }
-      body {
-        background: light-dark(#fff, #121212);
-        color: light-dark(#1a1a1a, #e8e8e8);
-      }
-      a {
-        color: light-dark(#0b5bd3, #3485ff);
-        text-decoration: none;
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
-    <header style="display:flex; gap:1rem; align-items:center; padding:1rem;">
-      <a href="/">Lamepunch</a>
+    <header class="flex items-center gap-4 p-4 border-b border-border">
+      <a href="/" class="font-semibold">Lamepunch</a>
       {
-        user ? (
-          <>
-            <a href="/upload">Upload</a>
-            <a href={`/${user.slug}`}>My profile</a>
-            {user.role == "admin" && <a href="/admin">Admin</a>}
-            <button type="button" id="sign-out">
-              Sign out
-            </button>
-          </>
-        ) : (
-          <button type="button" id="sign-in">
-            Sign in with Discord
-          </button>
+        user && (
+          <a href="/upload" class="text-primary hover:underline">
+            Upload
+          </a>
         )
       }
+
+      <div class="ml-auto">
+        {
+          user ? (
+            <Dropdown>
+              <DropdownTrigger class="flex items-center gap-2">
+                {user.image && (
+                  <img
+                    src={user.image}
+                    alt=""
+                    width="24"
+                    height="24"
+                    class="rounded-full"
+                  />
+                )}
+                {user.name}
+              </DropdownTrigger>
+              <DropdownContent align="end">
+                <DropdownLabel>{user.name}</DropdownLabel>
+                <DropdownSeparator />
+                <DropdownItem as="a" href={`/${user.slug}`}>
+                  My profile
+                </DropdownItem>
+                {user.role == "admin" && (
+                  <DropdownItem as="a" href="/admin">
+                    Admin
+                  </DropdownItem>
+                )}
+                <DropdownSeparator />
+                <DropdownItem as="button" type="button" id="sign-out" class="w-full">
+                  Sign out
+                </DropdownItem>
+              </DropdownContent>
+            </Dropdown>
+          ) : (
+            <Button type="button" id="sign-in" variant="secondary" size="sm">
+              <BrandDiscord class="size-4" />
+              Sign in
+            </Button>
+          )
+        }
+      </div>
     </header>
 
     <script>
@@ -65,7 +96,7 @@ const { user } = Astro.locals;
           location.href = "/";
         });
     </script>
-    <main style="padding:1rem;">
+    <main class="p-4">
       <slot />
     </main>
   </body>

@@ -24,21 +24,23 @@ const l = await db
 ---
 
 <Base title={`${u.name} · Clips`}>
-  <h1>{u.name}</h1>
+  <h1 class="text-2xl font-bold mb-4">{u.name}</h1>
   {l.length === 0 && <p>No clips yet.</p>}
 
-  <ul style="list-style:none; padding:0; display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(240px,1fr));">
+  <ul class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
     {
       l.map((c) => (
         <li>
-          <a href={`/watch/${c.id}`}>
+          <a href={`/watch/${c.id}`} class="block group">
             <img
               src={`https://customer-${env.STREAM_CODE}.cloudflarestream.com/${c.uid}/thumbnails/thumbnail.jpg`}
               alt={c.title || "Clip thumbnail"}
               loading="lazy"
-              style="width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:4px;"
+              class="w-full aspect-video object-cover rounded-md"
             />
-            {c.title && <span>{c.title}</span>}
+            {c.title && (
+              <span class="mt-1 block group-hover:underline">{c.title}</span>
+            )}
           </a>
         </li>
       ))

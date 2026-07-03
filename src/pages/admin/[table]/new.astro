@@ -2,9 +2,10 @@
 import { getTableColumns } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import AdminFields from "@/components/AdminFields.astro";
+import { Button } from "@/components/starwind/button";
 import { formValues, getAdminTable } from "@/lib/admin";
 
-const { db } = Astro.locals;
+const { db, user } = Astro.locals;
 const { table: name } = Astro.params;
 const table = getAdminTable(name);
 if (!table) return new Response("Not found", { status: 404 });
@@ -25,11 +26,16 @@ const cols = getTableColumns(table);
 ---
 
 <Base title={`Admin · new ${name}`}>
-  <p><a href={`/admin/${name}`}>← {name}</a></p>
-  <h1>New {name}</h1>
-  {error && <p style="color:#c00;">{error}</p>}
-  <form method="POST" style="max-width:480px;">
-    <AdminFields cols={cols} />
-    <button type="submit">Create</button>
+  <p>
+    <a href={`/admin/${name}`} class="text-primary hover:underline">
+      ← {name}
+    </a>
+  </p>
+  <h1 class="text-2xl font-bold my-2">New {name}</h1>
+  {error && <p class="text-error mb-2">{error}</p>}
+  <form method="POST" class="max-w-md">
+    {/* Prefill FK-ish defaults; userId = the signed-in admin, still editable. */}
+    <AdminFields cols={cols} row={{ userId: user?.id }} />
+    <Button type="submit">Create</Button>
   </form>
 </Base>

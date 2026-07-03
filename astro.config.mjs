@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 // @ts-check
 import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
@@ -6,9 +7,10 @@ import cloudflare from "@astrojs/cloudflare";
 // wires Worker bindings (D1, vars, secrets from .dev.vars) automatically during
 // `astro dev`; access them at runtime via `import { env } from "cloudflare:workers"`.
 export default defineConfig({
-  output: "server",
+	output: "server",
   adapter: cloudflare({ remoteBindings: true }),
   vite: {
+		plugins: [tailwindcss()],
     server: {
       allowedHosts: [".corgi-spica.ts.net"],
     },

@@ -1,5 +1,8 @@
 ---
 import Base from "@/layouts/Base.astro";
+import { Button } from "@/components/starwind/button";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
 import { games } from "@/db/schema";
 
 const { request, redirect, locals } = Astro;
@@ -29,25 +32,39 @@ if (request.method === "POST") {
 ---
 
 <Base title="Admin · new game">
-  <p><a href="/admin/games">← games</a></p>
-  <h1>New game</h1>
-  {error && <p style="color:#c00;">{error}</p>}
+  <p>
+    <a href="/admin/games" class="text-primary hover:underline">← games</a>
+  </p>
+  <h1 class="text-2xl font-bold my-2">New game</h1>
+  {error && <p class="text-error mb-2">{error}</p>}
 
-  <input
+  <Input
     type="search"
     id="igdb-search"
     placeholder="Search IGDB…"
     autocomplete="off"
-    style="width:100%; max-width:480px;"
+    class="max-w-md"
   />
-  <ul id="igdb-results" style="list-style:none; padding:0; max-width:480px;"></ul>
+  <ul id="igdb-results" class="max-w-md grid gap-1 my-2"></ul>
 
-  <form method="POST" style="display:grid; gap:0.75rem; max-width:480px;">
-    <label>Title<input type="text" name="title" id="f-title" required /></label>
-    <label>IGDB ID<input type="number" name="igdbId" id="f-igdbId" required /></label>
-    <label>Slug<input type="text" name="slug" id="f-slug" /></label>
-    <label>Image<input type="url" name="image" id="f-image" /></label>
-    <button type="submit">Create</button>
+  <form method="POST" class="grid gap-4 max-w-md mt-4">
+    <div class="grid gap-2">
+      <Label for="f-title">Title</Label>
+      <Input type="text" name="title" id="f-title" required />
+    </div>
+    <div class="grid gap-2">
+      <Label for="f-igdbId">IGDB ID</Label>
+      <Input type="number" name="igdbId" id="f-igdbId" required />
+    </div>
+    <div class="grid gap-2">
+      <Label for="f-slug">Slug</Label>
+      <Input type="text" name="slug" id="f-slug" />
+    </div>
+    <div class="grid gap-2">
+      <Label for="f-image">Image</Label>
+      <Input type="url" name="image" id="f-image" />
+    </div>
+    <Button type="submit" class="justify-self-start">Create</Button>
   </form>
 
   <script>
@@ -85,6 +102,7 @@ if (request.method === "POST") {
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.type = "button";
+        btn.className = "text-primary hover:underline text-left";
         btn.textContent = g.slug ? `${g.title} (${g.slug})` : g.title;
         btn.addEventListener("click", () => {
           fields.title.value = g.title;

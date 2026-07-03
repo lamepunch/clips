@@ -1,5 +1,7 @@
 ---
 import type { Column } from "drizzle-orm";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
 
 interface Props {
   cols: Record<string, Column>;
@@ -19,18 +21,42 @@ const dt = (v: unknown) =>
       const value = row?.[key];
       const required = col.notNull && !col.hasDefault;
       return (
-        <label style="display:block; margin-bottom:0.75rem;">
-          {key}
+        <div class="grid gap-2 mb-4">
+          <Label for={key}>{key}</Label>
           {col.dataType === "boolean" ? (
-            <input type="checkbox" name={key} checked={!!value} />
+            <input
+              type="checkbox"
+              id={key}
+              name={key}
+              checked={!!value}
+              class="size-4 justify-self-start"
+            />
           ) : col.dataType === "number" ? (
-            <input type="number" name={key} value={value as number} required={required} />
+            <Input
+              type="number"
+              id={key}
+              name={key}
+              value={value as number}
+              required={required}
+            />
           ) : col.dataType === "date" ? (
-            <input type="datetime-local" name={key} value={dt(value)} required={required} />
+            <Input
+              type="datetime-local"
+              id={key}
+              name={key}
+              value={dt(value)}
+              required={required}
+            />
           ) : (
-            <input type="text" name={key} value={(value as string) ?? ""} required={required} />
+            <Input
+              type="text"
+              id={key}
+              name={key}
+              value={(value as string) ?? ""}
+              required={required}
+            />
           )}
-        </label>
+        </div>
       );
     })
 }

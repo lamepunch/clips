@@ -15,21 +15,59 @@ const l = loggedIn
       })
       .from(user)
   : [];
+
+// MTA-style roundels, jumbled per render
+const roundels = [
+  ["15", "bg-[#EE352E]"],
+  ["77", "bg-[#B933AD]"],
+  ["40", "bg-[#FF6319]"],
+  ["J", "bg-[#996633]"],
+  ["C", "bg-[#006400]"],
+  ["F", "bg-[#800000]"],
+  ["D", "bg-[#0039A6]"],
+  ["A", "bg-[#00ADD0]"],
+  ["L", "bg-[#013220]"],
+  ["G", "bg-[#FF00FF]"],
+  ["R", "bg-[#AA336A]"]
+].sort(() => Math.random() - 0.5);
 ---
 
 <Base title="Clips">
   {
     !loggedIn ? (
-      <p>Sign in to view clips.</p>
+      <section class="max-w-xl mx-auto grid gap-4 py-16">
+        <div class="flex justify-end gap-1.5">
+          {
+            roundels.map(([label, color]) => (
+              <span
+                class={`${color} size-8 rounded-full flex items-center justify-center text-white font-bold text-sm`}
+              >
+                {label}
+              </span>
+            ))
+          }
+        </div>
+        <h1 class="text-6xl text-right font-bold">Lamepunch<br>Clips</h1>
+        <hr>
+        <p class="text-lg">
+          A place for friends to upload funny video game clips and have them be
+          preserved forever. Or at least until I stop wanting to pay for
+          the Cloudflare bill.
+        </p>
+        <p class="text-muted-foreground">
+          Sign in with Discord to get started. Access is currently limited to TF-R40
+          operatives.
+        </p>
+      </section>
     ) : (
       <>
-        <h1>Users</h1>
-        <ul style="list-style:none; padding:0;">
+        <h1 class="text-2xl font-bold mb-4">Users</h1>
+        <ul class="grid gap-2">
           {l.map((u) => (
-            <li style="margin-bottom:0.5rem;">
+            <li>
               <a
                 href={`/${u.slug}`}
-                style="display:flex; gap:0.5rem; align-items:center;"
+                class="flex items-center gap-2 text-primary hover:underline"
               >
                 {u.image && (
                   <img
@@ -38,7 +76,7 @@ const l = loggedIn
                     width="32"
                     height="32"
                     loading="lazy"
-                    style="border-radius:50%;"
+                    class="rounded-full"
                   />
                 )}
                 {u.name}

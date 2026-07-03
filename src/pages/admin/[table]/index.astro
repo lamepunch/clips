@@ -1,6 +1,14 @@
 ---
 import { getTableColumns } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/starwind/table";
 import { getAdminTable, primaryKey } from "@/lib/admin";
 
 const { db } = Astro.locals;
@@ -18,31 +26,38 @@ const rows = (await db.select().from(table as never)) as Record<
 ---
 
 <Base title={`Admin · ${name}`}>
-  <p><a href="/admin">← Admin</a></p>
-  <h1>{name}</h1>
-  <p><a href={`/admin/${name}/new`}>+ New</a></p>
+  <p><a href="/admin" class="text-primary hover:underline">← Admin</a></p>
+  <h1 class="text-2xl font-bold my-2">{name}</h1>
+  <p class="mb-4">
+    <a href={`/admin/${name}/new`} class="text-primary hover:underline">+ New</a>
+  </p>
 
-  <table style="border-collapse:collapse;">
-    <thead>
-      <tr>{cols.map((c) => <th style="text-align:left; padding:0.25rem 0.75rem;">{c}</th>)}</tr>
-    </thead>
-    <tbody>
+  <Table>
+    <TableHeader>
+      <TableRow>{cols.map((c) => <TableHead>{c}</TableHead>)}</TableRow>
+    </TableHeader>
+    <TableBody>
       {
         rows.map((row) => (
-          <tr>
+          <TableRow>
             {cols.map((c) => (
-              <td style="padding:0.25rem 0.75rem;">
+              <TableCell>
                 {c === pk ? (
-                  <a href={`/admin/${name}/${row[pk]}/edit`}>{String(row[c])}</a>
+                  <a
+                    href={`/admin/${name}/${row[pk]}/edit`}
+                    class="text-primary hover:underline"
+                  >
+                    {String(row[c])}
+                  </a>
                 ) : (
                   String(row[c] ?? "")
                 )}
-              </td>
+              </TableCell>
             ))}
-          </tr>
+          </TableRow>
         ))
       }
-    </tbody>
-  </table>
+    </TableBody>
+  </Table>
   {rows.length === 0 && <p>No rows.</p>}
 </Base>

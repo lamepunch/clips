@@ -4,14 +4,16 @@ import { adminTables } from "@/lib/admin";
 ---
 
 <Base title="Admin">
-  <h1>Admin</h1>
-  <p>Fancy knobs and buttons to press</p>
-  <h2>Manage</h2>
-  <ul>
+  <h1 class="text-2xl font-bold mb-2">Admin</h1>
+  <p class="text-muted-foreground mb-4">Fancy knobs and buttons to press</p>
+  <h2 class="text-lg font-semibold mb-2">Manage</h2>
+  <ul class="grid gap-1">
     {
       Object.keys(adminTables).map((t) => (
         <li>
-          <a href={`/admin/${t}`}>{t}</a>
+          <a href={`/admin/${t}`} class="text-primary hover:underline">
+            {t}
+          </a>
         </li>
       ))
     }

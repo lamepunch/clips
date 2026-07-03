@@ -2,6 +2,7 @@
 import { eq, getTableColumns } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import AdminFields from "@/components/AdminFields.astro";
+import { Button } from "@/components/starwind/button";
 import { formValues, getAdminTable, primaryKey } from "@/lib/admin";
 
 const { db } = Astro.locals;
@@ -37,11 +38,18 @@ const cols = getTableColumns(table);
 ---
 
 <Base title={`Admin · edit ${name}`}>
-  <p><a href={`/admin/${name}`}>← {name}</a></p>
-  <h1>Edit {name} <small>{String(row[pkKey])}</small></h1>
-  {error && <p style="color:#c00;">{error}</p>}
-  <form method="POST" style="max-width:480px;">
+  <p>
+    <a href={`/admin/${name}`} class="text-primary hover:underline">
+      ← {name}
+    </a>
+  </p>
+  <h1 class="text-2xl font-bold my-2">
+    Edit {name}
+    <small class="text-muted-foreground text-sm">{String(row[pkKey])}</small>
+  </h1>
+  {error && <p class="text-error mb-2">{error}</p>}
+  <form method="POST" class="max-w-md">
     <AdminFields cols={cols} row={row} />
-    <button type="submit">Save</button>
+    <Button type="submit">Save</Button>
   </form>
 </Base>
