@@ -6,7 +6,7 @@ export const adminTables = { user, games, clips } as const;
 export type AdminTableName = keyof typeof adminTables;
 
 export const getAdminTable = (name?: string) =>
-  name && name in adminTables
+  name && Object.hasOwn(adminTables, name)
     ? adminTables[name as AdminTableName]
     : undefined;
 
