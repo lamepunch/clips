@@ -39,10 +39,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response("Upload init failed", { status: 502 });
   }
 
-  await db.insert(clips).values({
-    userId: user.id,
-    uid: upload.uid,
-  });
+  try {
+    await db.insert(clips).values({
+      userId: user.id,
+      uid: upload.uid,
+    });
+  } catch (err) {
+    // The Stream video already exists at this point; log its uid so the
+    // orphaned upload can be reconciled rather than the failure being lost.
+    console.error("failed to persist clip row", { uid: upload.uid, err });
+    return new Response("Upload init failed", { status: 502 });
+  }
 
   // Uppy's Tus plugin reads Location from the response of this request.
   return new Response(null, {
