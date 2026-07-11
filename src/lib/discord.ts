@@ -16,6 +16,10 @@ export async function getGuildRole(
   memberGuildIds: string[],
   viewerGuildIds: string[],
 ): Promise<"user" | "viewer"> {
+  // Not paginating: Discord returns up to 200 guilds per page. If someone
+  // signs up while in more than 200 guilds, their member/viewer guild could be
+  // missing from this response and they'd be mis-roled or rejected. We'll deal
+  // with pagination if/when that actually becomes a problem.
   const res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
