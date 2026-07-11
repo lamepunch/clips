@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { defineMiddleware } from "astro:middleware";
 import { getDb } from "./db";
 import { getAuth } from "./lib/auth";
+import { forbidden, unauthorized } from "./lib/http";
 
 // Expose env, db, auth, and the resolved session on `locals` so pages and API
 // routes don't each re-import them.
@@ -33,14 +34,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     pathname.startsWith("/api/webhooks");
 
   if (!locals.session && !isPublic) {
-    return pathname.startsWith("/api/")
-      ? new Response("Unauthorized", { status: 401 })
-      : redirect("/");
+    return pathname.startsWith("/api/") ? unauthorized() : redirect("/");
   }
 
   // /admin requires the admin role.
   if (pathname.startsWith("/admin") && locals.user?.role !== "admin") {
-    return new Response("Forbidden", { status: 403 });
+    return forbidden();
   }
 
   // Viewers are read-only: no uploads.
@@ -48,9 +47,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     (pathname === "/upload" || pathname === "/api/upload") &&
     locals.user?.role === "viewer"
   ) {
-    return pathname.startsWith("/api/")
-      ? new Response("Forbidden", { status: 403 })
-      : redirect("/");
+    return pathname.startsWith("/api/") ? forbidden() : redirect("/");
   }
 
   return next();

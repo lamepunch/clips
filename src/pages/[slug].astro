@@ -2,6 +2,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import { clips, user, ClipStatus } from "@/db/schema";
+import { notFound } from "@/lib/http";
+import { streamThumbnailUrl } from "@/lib/stream";
 
 const { db, env } = Astro.locals;
 const { slug } = Astro.params;
@@ -11,7 +13,7 @@ const u = slug
   : undefined;
 
 if (!u) {
-  return new Response("Not found", { status: 404 });
+  return notFound();
 }
 
 const l = await db
@@ -33,7 +35,7 @@ const l = await db
         <li>
           <a href={`/watch/${c.id}`} class="block group">
             <img
-              src={`https://customer-${env.STREAM_CODE}.cloudflarestream.com/${c.uid}/thumbnails/thumbnail.jpg`}
+              src={streamThumbnailUrl(env, c.uid)}
               alt={c.title || "Clip thumbnail"}
               loading="lazy"
               class="w-full aspect-video object-cover rounded-md"

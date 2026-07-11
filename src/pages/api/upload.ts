@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { clips } from "@/db/schema";
+import { forbidden, unauthorized } from "@/lib/http";
 import { createUploadUrl } from "@/lib/stream";
 
 /**
@@ -14,11 +15,11 @@ import { createUploadUrl } from "@/lib/stream";
 export const POST: APIRoute = async ({ request, locals }) => {
   const { db, env, session, user } = locals;
   if (!session || !user) {
-    return new Response("Unauthorized", { status: 401 });
+    return unauthorized();
   }
   // Viewers cannot upload videos
   if (user.role === "viewer") {
-    return new Response("Forbidden", { status: 403 });
+    return forbidden();
   }
 
   const length = request.headers.get("Upload-Length");

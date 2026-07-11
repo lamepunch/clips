@@ -5,6 +5,19 @@
 
 const CF_API = "https://api.cloudflare.com/client/v4";
 
+// Base URL for a video on the customer Stream subdomain:
+// customer-<STREAM_CODE>.cloudflarestream.com/<uid>
+const streamBaseUrl = (env: Env, uid: string) =>
+  `https://customer-${env.STREAM_CODE}.cloudflarestream.com/${uid}`;
+
+/** Embeddable Stream player iframe URL for a clip. */
+export const streamIframeUrl = (env: Env, uid: string) =>
+  `${streamBaseUrl(env, uid)}/iframe`;
+
+/** Thumbnail image URL for a clip. */
+export const streamThumbnailUrl = (env: Env, uid: string) =>
+  `${streamBaseUrl(env, uid)}/thumbnails/thumbnail.jpg`;
+
 /**
  * Create a direct creator upload URL that Uppy will use to
  * upload our clip to Cloudflare Stream

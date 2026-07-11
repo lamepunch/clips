@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { eq } from "drizzle-orm";
 import { ClipStatus, clips } from "@/db/schema";
+import { forbidden } from "@/lib/http";
 import { verifyStreamWebhook } from "@/lib/stream";
 
 type StreamWebhookBody = {
@@ -23,7 +24,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   );
 
   if (!valid) {
-    return new Response("Invalid signature", { status: 403 });
+    return forbidden("Invalid signature");
   }
 
   const body = JSON.parse(rawBody) as StreamWebhookBody;

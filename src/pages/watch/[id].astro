@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import { Button } from "@/components/starwind/button";
 import { clips, ClipStatus } from "@/db/schema";
+import { notFound } from "@/lib/http";
+import { streamIframeUrl } from "@/lib/stream";
 
 const { db, env, user } = Astro.locals;
 const { id } = Astro.params;
@@ -12,7 +14,7 @@ const c = id
   : undefined;
 
 if (!c) {
-  return new Response("Not found", { status: 404 });
+  return notFound();
 }
 ---
 
@@ -21,7 +23,7 @@ if (!c) {
   {
     c.status === ClipStatus.READY ? (
       <iframe
-        src={`https://customer-${env.STREAM_CODE}.cloudflarestream.com/${c.uid}/iframe`}
+        src={streamIframeUrl(env, c.uid)}
         class="border-0 mx-auto w-full max-w-[calc(80svh*16/9)] aspect-video rounded-md"
         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
         allowfullscreen
