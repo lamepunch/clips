@@ -1,6 +1,22 @@
-import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createUploadUrl, verifyStreamWebhook } from "./stream";
+
+// Independent HMAC-SHA256 hex digest using Web Crypto (native in the Workers
+// runtime), mirroring what verifyStreamWebhook computes internally.
+async function hmacHex(key: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(key),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(message));
+  return [...new Uint8Array(sig)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 const fetchMock = vi.fn();
 
@@ -82,7 +98,7 @@ describe("verifyStreamWebhook", () => {
   const time = "1710000000";
 
   const sign = (t: string, rawBody: string, key = secret) =>
-    createHmac("sha256", key).update(`${t}.${rawBody}`).digest("hex");
+    hmacHex(key, `${t}.${rawBody}`);
 
   it("returns false when the header is missing", async () => {
     await expect(verifyStreamWebhook(body, null, secret)).resolves.toBe(false);
@@ -94,17 +110,17 @@ describe("verifyStreamWebhook", () => {
   });
 
   it("returns true for a correctly signed payload", async () => {
-    const header = `time=${time},sig1=${sign(time, body)}`;
+    const header = `time=${time},sig1=${await sign(time, body)}`;
     await expect(verifyStreamWebhook(body, header, secret)).resolves.toBe(true);
   });
 
   it("returns false when the signature does not match", async () => {
-    const header = `time=${time},sig1=${sign(time, body, "wrong-secret")}`;
+    const header = `time=${time},sig1=${await sign(time, body, "wrong-secret")}`;
     await expect(verifyStreamWebhook(body, header, secret)).resolves.toBe(false);
   });
 
   it("returns false when the body was tampered with", async () => {
-    const header = `time=${time},sig1=${sign(time, body)}`;
+    const header = `time=${time},sig1=${await sign(time, body)}`;
     await expect(
       verifyStreamWebhook(body + "tamper", header, secret),
     ).resolves.toBe(false);

@@ -1,17 +1,25 @@
-import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
-export default defineConfig({
+// Tests run inside the Workers (workerd) runtime via @cloudflare/vitest-pool-workers,
+// matching production. compatibility settings mirror wrangler.jsonc.
+export default defineWorkersConfig({
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@": new URL("./src", import.meta.url).pathname,
     },
   },
   test: {
-    environment: "node",
     include: ["src/**/*.{test,spec}.ts"],
+    poolOptions: {
+      workers: {
+        miniflare: {
+          compatibilityDate: "2025-06-01",
+          compatibilityFlags: ["nodejs_compat"],
+        },
+      },
+    },
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "html"],
       include: ["src/lib/**/*.ts"],
       exclude: ["src/lib/auth.ts", "src/lib/authClient.ts"],

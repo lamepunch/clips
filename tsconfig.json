@@ -13,7 +13,7 @@
   "compilerOptions": {
     "types": [
       "@cloudflare/workers-types",
-      "node"
+      "@cloudflare/vitest-pool-workers"
     ],
     "strictNullChecks": true,
     "paths": {
