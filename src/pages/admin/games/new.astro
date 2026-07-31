@@ -91,12 +91,32 @@ if (request.method === "POST") {
       timer = setTimeout(run, 300);
     });
 
+    function showError(msg: string) {
+      list.innerHTML = "";
+      const li = document.createElement("li");
+      li.className = "text-error";
+      li.textContent = msg;
+      list.appendChild(li);
+    }
+
     async function run() {
       const q = search.value.trim();
       if (!q) return (list.innerHTML = "");
-      const res = await fetch(`/api/games/search?q=${encodeURIComponent(q)}`);
-      if (!res.ok) return;
-      const games: Result[] = await res.json();
+
+      let games: Result[];
+      try {
+        const res = await fetch(
+          `/api/games/search?q=${encodeURIComponent(q)}`,
+        );
+        if (!res.ok) {
+          showError(`Search failed (${res.status}). Please try again.`);
+          return;
+        }
+        games = await res.json();
+      } catch {
+        showError("Search failed. Check your connection and try again.");
+        return;
+      }
 
       list.innerHTML = "";
       for (const g of games) {
