@@ -6,6 +6,7 @@ import { Input } from "@/components/starwind/input";
 import { Label } from "@/components/starwind/label";
 import { Textarea } from "@/components/starwind/textarea";
 import { clips } from "@/db/schema";
+import { forbidden, notFound } from "@/lib/http";
 
 const { request, redirect } = Astro;
 const { id } = Astro.params;
@@ -17,8 +18,8 @@ const c = id
   ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
   : undefined;
 
-if (!c) return new Response("Not found", { status: 404 });
-if (c.userId !== user.id) return new Response("Forbidden", { status: 403 });
+if (!c) return notFound();
+if (c.userId !== user.id) return forbidden();
 
 if (request.method === "POST") {
   const form = await request.formData();

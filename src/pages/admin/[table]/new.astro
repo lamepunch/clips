@@ -4,11 +4,13 @@ import Base from "@/layouts/Base.astro";
 import AdminFields from "@/components/AdminFields.astro";
 import { Button } from "@/components/starwind/button";
 import { formValues, getAdminTable } from "@/lib/admin";
+import { errorMessage } from "@/lib/errors";
+import { notFound } from "@/lib/http";
 
 const { db, user } = Astro.locals;
 const { table: name } = Astro.params;
 const table = getAdminTable(name);
-if (!table) return new Response("Not found", { status: 404 });
+if (!table) return notFound();
 
 let error: string | null = null;
 if (Astro.request.method === "POST") {
@@ -18,7 +20,7 @@ if (Astro.request.method === "POST") {
     await db.insert(table as never).values(values as never);
     return Astro.redirect(`/admin/${name}`);
   } catch (err) {
-    error = err instanceof Error ? err.message : String(err);
+    error = errorMessage(err);
   }
 }
 

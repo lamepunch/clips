@@ -10,11 +10,12 @@ import {
   TableRow,
 } from "@/components/starwind/table";
 import { getAdminTable, primaryKey } from "@/lib/admin";
+import { notFound } from "@/lib/http";
 
 const { db } = Astro.locals;
 const { table: name } = Astro.params;
 const table = getAdminTable(name);
-if (!table) return new Response("Not found", { status: 404 });
+if (!table) return notFound();
 
 const cols = Object.keys(getTableColumns(table));
 const [pk] = primaryKey(table);
