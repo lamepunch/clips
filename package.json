@@ -29,6 +29,7 @@
     "@uppy/tus": "^5.1.1",
     "astro": "^6.4.4",
     "better-auth": "^1.6.14",
+    "customerio-node": "^5.2.0",
     "drizzle-orm": "^0.45.2",
     "tailwind-merge": "^3.6.0",
     "tailwind-variants": "^3.2.2",

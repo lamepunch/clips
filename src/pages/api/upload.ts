@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { clips } from "@/db/schema";
+import { sendToCio } from "@/lib/cio";
 import { forbidden, unauthorized } from "@/lib/http";
 import { createUploadUrl } from "@/lib/stream";
 
@@ -13,7 +14,7 @@ import { createUploadUrl } from "@/lib/stream";
  * row to READY.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-  const { db, env, session, user } = locals;
+  const { cfContext, db, env, session, user } = locals;
   if (!session || !user) {
     return unauthorized();
   }
@@ -51,6 +52,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
     console.error("failed to persist clip row", { uid: upload.uid, err });
     return new Response("Upload init failed", { status: 502 });
   }
+
+  sendToCio(env, cfContext, (cio) =>
+    cio.track({
+      userId: user.id,
+      event: "Clip Uploaded",
+      properties: { uid: upload.uid },
+    }),
+  );
 
   // Uppy's Tus plugin reads Location from the response of this request.
   return new Response(null, {

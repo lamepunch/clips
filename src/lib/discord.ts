@@ -2,20 +2,8 @@ import { APIError } from "better-auth/api";
 
 type Guild = { id: string; name: string };
 
-/**
- * Resolve the signed-in Discord user's role from their guild memberships:
- * member guilds grant "user" (full access), viewer guilds grant "viewer"
- * (read-only). Member guilds win when someone is in both. Throws an APIError
- * (aborting the Better Auth flow) when they're in neither.
- *
- * Called from the account create/update database hooks, where the freshly
- * issued Discord access token is available.
- */
-export async function getGuildRole(
-  accessToken: string,
-  memberGuildIds: string[],
-  viewerGuildIds: string[],
-): Promise<"user" | "viewer"> {
+/** The guild IDs the token's owner belongs to. */
+async function fetchGuildIds(accessToken: string): Promise<Set<string>> {
   // Not paginating: Discord returns up to 200 guilds per page. If someone
   // signs up while in more than 200 guilds, their member/viewer guild could be
   // missing from this response and they'd be mis-roled or rejected. We'll deal
@@ -31,7 +19,21 @@ export async function getGuildRole(
   }
 
   const guilds = (await res.json()) as Guild[];
-  const ids = new Set(guilds.map((g) => g.id));
+  return new Set(guilds.map((g) => g.id));
+}
+
+/**
+ * Door policy for a *new* sign-in: member guilds grant "user" (full access),
+ * viewer guilds grant "viewer" (read-only), member wins when both. Throws an
+ * APIError (aborting the Better Auth flow) when they're in neither, so
+ * strangers can't create an account.
+ */
+export async function getGuildRole(
+  accessToken: string,
+  memberGuildIds: string[],
+  viewerGuildIds: string[],
+): Promise<"user" | "viewer"> {
+  const ids = await fetchGuildIds(accessToken);
 
   if (memberGuildIds.some((id) => ids.has(id))) return "user";
   if (viewerGuildIds.some((id) => ids.has(id))) return "viewer";
@@ -39,6 +41,20 @@ export async function getGuildRole(
   throw new APIError("FORBIDDEN", {
     message: "You must be a member of an approved Discord server to sign in.",
   });
+}
+
+/**
+ * Re-check for an *existing* user on every sign-in. Deliberately never rejects:
+ * someone who leaves the member guilds is downgraded to read-only rather than
+ * locked out of clips they can already see. Asymmetric with
+ * {@link getGuildRole} on purpose — don't let strangers in, don't evict friends.
+ */
+export async function refreshGuildRole(
+  accessToken: string,
+  memberGuildIds: string[],
+): Promise<"user" | "viewer"> {
+  const ids = await fetchGuildIds(accessToken);
+  return memberGuildIds.some((id) => ids.has(id)) ? "user" : "viewer";
 }
 
 export function parseGuildIds(raw: string | undefined): string[] {

@@ -19,7 +19,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   locals.db = db;
 
   // Authentication
-  const auth = getAuth(env, db);
+  const auth = getAuth(env, db, locals.cfContext);
   const data = await auth.api.getSession({ headers: request.headers });
   locals.auth = auth;
   locals.session = data?.session ?? null;

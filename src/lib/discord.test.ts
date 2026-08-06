@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getGuildRole, isDiscordBot, parseGuildIds } from "./discord";
+import {
+  getGuildRole,
+  isDiscordBot,
+  parseGuildIds,
+  refreshGuildRole,
+} from "./discord";
 
 describe("isDiscordBot", () => {
   const req = (ua?: string) =>
@@ -101,6 +106,50 @@ describe("getGuildRole", () => {
     fetchMock.mockResolvedValue({ ok: false, json: async () => [] });
 
     await expect(getGuildRole("bad", ["m1"], ["v1"])).rejects.toMatchObject({
+      message: "Could not verify your Discord server membership.",
+    });
+  });
+});
+
+describe("refreshGuildRole", () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    vi.stubGlobal("fetch", fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    fetchMock.mockReset();
+  });
+
+  const guildsResponse = (guilds: Array<{ id: string; name: string }>) => ({
+    ok: true,
+    json: async () => guilds,
+  });
+
+  it("keeps 'user' while still in a member guild", async () => {
+    fetchMock.mockResolvedValue(guildsResponse([{ id: "m1", name: "member" }]));
+
+    await expect(refreshGuildRole("tok", ["m1"])).resolves.toBe("user");
+  });
+
+  it("downgrades to 'viewer' after leaving the member guilds", async () => {
+    fetchMock.mockResolvedValue(guildsResponse([{ id: "other", name: "o" }]));
+
+    await expect(refreshGuildRole("tok", ["m1"])).resolves.toBe("viewer");
+  });
+
+  it("downgrades to 'viewer' when in no guilds at all, never rejecting", async () => {
+    fetchMock.mockResolvedValue(guildsResponse([]));
+
+    await expect(refreshGuildRole("tok", ["m1"])).resolves.toBe("viewer");
+  });
+
+  it("still throws when Discord rejects the token, so the role is left alone", async () => {
+    fetchMock.mockResolvedValue({ ok: false, json: async () => [] });
+
+    await expect(refreshGuildRole("bad", ["m1"])).rejects.toMatchObject({
       message: "Could not verify your Discord server membership.",
     });
   });
