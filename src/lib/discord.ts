@@ -47,3 +47,16 @@ export function parseGuildIds(raw: string | undefined): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+/**
+ * Whether a request came from Discord's link-preview crawler, which sends
+ * "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordbot.com)".
+ *
+ * ponytail: user agents are trivially spoofable. This only unlocks reading a
+ * clip's title + public Stream thumbnail on /watch/*, so a spoofed UA gains
+ * nothing it couldn't already get from the (unsigned) Stream URLs. Don't reuse
+ * this to gate anything that actually matters.
+ */
+export function isDiscordBot(request: Request): boolean {
+  return (request.headers.get("user-agent") ?? "").includes("Discordbot");
+}

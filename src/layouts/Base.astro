@@ -13,8 +13,12 @@ import {
 
 interface Props {
   title?: string;
+  /** OpenGraph description for link embeds (Discord). */
+  description?: string;
+  /** OpenGraph image URL; renders a large-image card. */
+  image?: string;
 }
-const { title = "Clips" } = Astro.props;
+const { title = "Clips", description, image } = Astro.props;
 const { user } = Astro.locals;
 ---
 
@@ -24,6 +28,22 @@ const { user } = Astro.locals;
     <title>{title} &middot; Lamepunch</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    {/* Link embeds (Discord). theme-color sets the embed's left border. */}
+    <meta property="og:site_name" content="Lamepunch Clips" />
+    <meta property="og:title" content={title} />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta name="theme-color" content="#a78bfa" />
+    {description && <meta property="og:description" content={description} />}
+    {
+      image && (
+        <>
+          <meta property="og:type" content="video.other" />
+          <meta property="og:image" content={image} />
+          <meta name="twitter:card" content="summary_large_image" />
+        </>
+      )
+    }
   </head>
   <body>
     <header class="flex items-center gap-4 p-4 border-b border-border">

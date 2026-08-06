@@ -21,6 +21,12 @@
       "migrations_dir": "migrations",
     },
   ],
+  // Not used yet: the tus upload relay stays on the REST API because the
+  // binding has no tus support. Here for signed tokens / captions / management.
+  // NOTE: no local emulator — add "remote": true when code actually calls it.
+  "stream": {
+    "binding": "STREAM",
+  },
   "vars": {
     "BETTER_AUTH_URL": "https://clips.lamepunch.com",
     "DISCORD_CLIENT_ID": "1515719095725592616",

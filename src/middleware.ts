@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { defineMiddleware } from "astro:middleware";
 import { getDb } from "./db";
 import { getAuth } from "./lib/auth";
+import { isDiscordBot } from "./lib/discord";
 import { forbidden, unauthorized } from "./lib/http";
 
 // Expose env, db, auth, and the resolved session on `locals` so pages and API
@@ -33,7 +34,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/webhooks");
 
-  if (!locals.session && !isPublic) {
+  // Discord's crawler has no session, so let it read clip pages for link embed
+  // OpenGraph tags. Narrow on purpose: GET /watch/* only. The edit page keeps
+  // its own `if (!user)` guard, so this can't reach it.
+  const isEmbedCrawler =
+    request.method === "GET" &&
+    pathname.startsWith("/watch/") &&
+    isDiscordBot(request);
+
+  if (!locals.session && !isPublic && !isEmbedCrawler) {
     return pathname.startsWith("/api/") ? unauthorized() : redirect("/");
   }
 

@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "wrangler types",
     "build": "astro build",
     "preview": "wrangler dev",
     "deploy": "astro build && wrangler deploy",
@@ -36,11 +37,22 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.12.21",
-    "@cloudflare/workers-types": "^4.20260607.1",
+    "@types/node": "^26.1.2",
     "@vitest/coverage-istanbul": "^3.2.7",
     "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.3",
     "vitest": "^3.2.7",
     "wrangler": "^4.98.0"
+  },
+  "allowScripts": {
+    "esbuild@0.27.3": true,
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.0": true,
+    "workerd@1.20260310.1": true,
+    "workerd@1.20260603.1": true,
+    "fsevents@2.3.3": true,
+    "sharp@0.34.5": true
   }
 }

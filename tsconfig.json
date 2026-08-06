@@ -1,9 +1,6 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": [
-    ".astro/types.d.ts",
-    "**/*"
-  ],
+  "include": [".astro/types.d.ts", "**/*"],
   "exclude": [
     "dist",
     // Starwind barrels import .astro files, which raw `tsc` can't resolve
@@ -12,14 +9,13 @@
   ],
   "compilerOptions": {
     "types": [
-      "@cloudflare/workers-types",
-      "@cloudflare/vitest-pool-workers"
+      "@cloudflare/vitest-pool-workers",
+      "@types/node",
+      "./worker-configuration.d.ts"
     ],
     "strictNullChecks": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   }
 }

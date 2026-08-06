@@ -1,5 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getGuildRole, parseGuildIds } from "./discord";
+import { getGuildRole, isDiscordBot, parseGuildIds } from "./discord";
+
+describe("isDiscordBot", () => {
+  const req = (ua?: string) =>
+    new Request("https://example.com/watch/1", {
+      headers: ua ? { "user-agent": ua } : {},
+    });
+
+  it("matches Discord's crawler user agent", () => {
+    expect(
+      isDiscordBot(
+        req("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordbot.com)"),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not match browsers or a missing user agent", () => {
+    expect(isDiscordBot(req("Mozilla/5.0 (Macintosh) Safari/605.1.15"))).toBe(
+      false,
+    );
+    expect(isDiscordBot(req())).toBe(false);
+  });
+});
 
 describe("parseGuildIds", () => {
   it("returns an empty array for undefined or empty input", () => {
