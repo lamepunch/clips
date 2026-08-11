@@ -105,7 +105,7 @@ const { user } = Astro.locals;
       document.querySelector("#sign-in")?.addEventListener("click", () => {
         authClient.signIn.social({
           provider: "discord",
-          callbackURL: location.pathname,
+          callbackURL: "/",
         });
       });
 
