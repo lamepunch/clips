@@ -23,10 +23,8 @@ async function fetchGuildIds(accessToken: string): Promise<Set<string>> {
 }
 
 /**
- * Door policy for a *new* sign-in: member guilds grant "user" (full access),
- * viewer guilds grant "viewer" (read-only), member wins when both. Throws an
- * APIError (aborting the Better Auth flow) when they're in neither, so
- * strangers can't create an account.
+ * Door policy for a *new* sign-in. Member guilds win over viewer guilds, and
+ * being in neither throws, which aborts the sign-in.
  */
 export async function getGuildRole(
   accessToken: string,
@@ -44,10 +42,8 @@ export async function getGuildRole(
 }
 
 /**
- * Re-check for an *existing* user on every sign-in. Deliberately never rejects:
- * someone who leaves the member guilds is downgraded to read-only rather than
- * locked out of clips they can already see. Asymmetric with
- * {@link getGuildRole} on purpose — don't let strangers in, don't evict friends.
+ * Re-check for an *existing* user. Asymmetric with {@link getGuildRole} on
+ * purpose: never rejects, just downgrades to read-only.
  */
 export async function refreshGuildRole(
   accessToken: string,
@@ -65,13 +61,9 @@ export function parseGuildIds(raw: string | undefined): string[] {
 }
 
 /**
- * Whether a request came from Discord's link-preview crawler, which sends
- * "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordbot.com)".
+ * Discord's link-preview crawler.
  *
- * ponytail: user agents are trivially spoofable. This only unlocks reading a
- * clip's title + public Stream thumbnail on /watch/*, so a spoofed UA gains
- * nothing it couldn't already get from the (unsigned) Stream URLs. Don't reuse
- * this to gate anything that actually matters.
+ * Trivially spoofable, so only use it to expose things that are already public.
  */
 export function isDiscordBot(request: Request): boolean {
   return (request.headers.get("user-agent") ?? "").includes("Discordbot");

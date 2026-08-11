@@ -19,13 +19,8 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
   const memberGuildIds = parseGuildIds(env.ALLOWED_GUILD_IDS);
   const viewerGuildIds = parseGuildIds(env.VIEWER_GUILD_IDS);
 
-  // Door policy for brand-new accounts: reject anyone who isn't in an allowed
-  // guild, before a user row exists. Throwing here aborts the sign-in.
-  //
-  // This only fires on account *creation* — a returning sign-in updates the
-  // account with token fields only (no providerId/userId), so it can't be
-  // gated here. Ongoing membership is re-checked in the `hooks.after` below,
-  // which also owns role stamping.
+  // Rejects non-members before a user row exists. Only fires on account
+  // creation; returning sign-ins are handled in `hooks.after` below.
   const gate = async (account: {
     providerId?: string | null;
     accessToken?: string | null;
@@ -71,9 +66,10 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
       },
     },
     hooks: {
-      // Everything that must happen on *every* sign-in lives here, not in the
-      // account databaseHooks: a returning sign-in only updates token fields,
-      // so hooks keyed on providerId/userId never fire (see PAPERCUTS.md).
+      // Anything that must run on *every* sign-in belongs here, not in the
+      // account databaseHooks — those never fire for returning users (Better
+      // Auth's updateAccount on a returning sign-in carries only token fields,
+      // no providerId/userId, so a guard on either always returns early).
       after: createAuthMiddleware(async (c) => {
         if (!c.path.startsWith("/callback/")) return;
 
@@ -81,8 +77,7 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
         if (!session) return;
         const { id: userId, email, name, slug } = session.user;
 
-        // Keep the role in step with Discord. Losing member access downgrades
-        // to read-only rather than locking someone out; admins are exempt.
+        // Admins are exempt so they can't be downgraded by guild changes.
         let role = session.user.role;
         if (role !== "admin") {
           const account = await db.query.account.findFirst({

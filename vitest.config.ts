@@ -1,8 +1,17 @@
-import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
+import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { defineConfig } from "vitest/config";
 
-// Tests run inside the Workers (workerd) runtime via @cloudflare/vitest-pool-workers,
-// matching production. compatibility settings mirror wrangler.jsonc.
-export default defineWorkersConfig({
+// Tests run in workerd, so keep these compatibility settings in step with
+// wrangler.jsonc.
+export default defineConfig({
+  plugins: [
+    cloudflareTest({
+      miniflare: {
+        compatibilityDate: "2025-06-01",
+        compatibilityFlags: ["nodejs_compat"],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": new URL("./src", import.meta.url).pathname,
@@ -10,14 +19,6 @@ export default defineWorkersConfig({
   },
   test: {
     include: ["src/**/*.{test,spec}.ts"],
-    poolOptions: {
-      workers: {
-        miniflare: {
-          compatibilityDate: "2025-06-01",
-          compatibilityFlags: ["nodejs_compat"],
-        },
-      },
-    },
     coverage: {
       provider: "istanbul",
       reporter: ["text", "html"],

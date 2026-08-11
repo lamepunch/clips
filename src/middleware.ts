@@ -5,8 +5,10 @@ import { getAuth } from "./lib/auth";
 import { isDiscordBot } from "./lib/discord";
 import { forbidden, unauthorized } from "./lib/http";
 
-// Expose env, db, auth, and the resolved session on `locals` so pages and API
-// routes don't each re-import them.
+/**
+ * Middleware that exposes env, db, auth, and the resolved session on `locals`.
+ * It also gates access to protected routes based on session and role.
+ */
 export const onRequest = defineMiddleware(async (context, next) => {
   // Make all of the fun stuff available to each request
   const { locals, url, request, redirect } = context;
@@ -31,19 +33,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = url;
   const isPublic =
     pathname === "/" ||
+    pathname === "/welcome" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/webhooks");
 
-  // Discord's crawler has no session, so let it read clip pages for link embed
-  // OpenGraph tags. Narrow on purpose: GET /watch/* only. The edit page keeps
-  // its own `if (!user)` guard, so this can't reach it.
+  // Discord's crawler has no session but needs to read OpenGraph tags. Kept
+  // narrow on purpose; the edit page has its own guard so this can't reach it.
   const isEmbedCrawler =
     request.method === "GET" &&
     pathname.startsWith("/watch/") &&
     isDiscordBot(request);
 
   if (!locals.session && !isPublic && !isEmbedCrawler) {
-    return pathname.startsWith("/api/") ? unauthorized() : redirect("/");
+    return pathname.startsWith("/api/") ? unauthorized() : redirect("/welcome");
   }
 
   // /admin requires the admin role.

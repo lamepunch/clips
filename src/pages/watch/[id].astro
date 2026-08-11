@@ -13,6 +13,9 @@ const c = id
   ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
   : undefined;
 
+const isReady = c?.status === ClipStatus.READY;
+const isUploader = c?.userId === user?.id;
+
 if (!c) {
   return notFound();
 }
@@ -21,13 +24,11 @@ if (!c) {
 <Base
   title={c.title || "Clip"}
   description={c.description || undefined}
-  image={c.status === ClipStatus.READY
-    ? streamThumbnailUrl(env, c.uid)
-    : undefined}
+  image={isReady ? streamThumbnailUrl(env, c.uid) : undefined}
 >
   {c.title && <h1 class="text-2xl font-bold mb-4">{c.title}</h1>}
   {
-    c.status === ClipStatus.READY ? (
+    isReady ? (
       <iframe
         src={streamIframeUrl(env, c.uid)}
         class="border-0 mx-auto w-full max-w-[calc(80svh*16/9)] aspect-video rounded-md"
@@ -40,7 +41,7 @@ if (!c) {
   }
   {c.description && <p class="mt-2">{c.description}</p>}
   {
-    c.userId === user?.id && (
+    isUploader && (
       <p class="mt-2">
         <Button href={`/watch/${c.id}/edit`}>Edit</Button>
       </p>

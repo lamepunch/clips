@@ -11,7 +11,5 @@ TWITCH_CLIENT_SECRET=
 STREAM_API_TOKEN=
 STREAM_WEBHOOK_SECRET=
 
-# Customer.io Data Pipelines write key. Use the *dev* workspace's key here and
-# the prod workspace's key for the deployed Worker — the key is what selects the
-# environment, so no code branches on it. Leave unset to disable the sync locally.
+# Customer.io Data Pipelines write key. Leave unset to disable the sync.
 CIO_PIPELINES_WRITE_KEY=

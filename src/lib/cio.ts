@@ -1,21 +1,18 @@
-import { PipelinesClient, RegionUS } from "customerio-node";
+import { PipelinesClient } from "customerio-node";
 
 type CioCall = (cio: PipelinesClient) => Promise<unknown>;
 
 /**
- * Customer.io stores date attributes as unix seconds, and only converts ISO
- * strings for its own reserved attributes — see PAPERCUTS.md.
+ * Convert a Date to unix seconds (not milliseconds) for Customer.io.
+ *
+ * {@link https://docs.customer.io/messaging/segmentation/timestamp-conditions/#what-does-is-a-timestamp-even-mean Timestamps}
  */
 export const epochSeconds = (date: Date): number =>
   Math.floor(date.getTime() / 1000);
 
 /**
- * Best-effort delivery to Customer.io. Does nothing without a write key, never
- * throws, and never delays the response — analytics must not be able to slow
- * down or break the flow it is reporting on. Callers fire and forget.
- *
- * The write key selects the workspace, so it doubles as the environment switch:
- * dev and production hold different keys and no code branches on it.
+ * Send a request to the Customer.io Pipelines API.
+ * Best-effort: no-ops without a write key, never throws, tries not to block.
  */
 export function sendToCio(
   env: Env,
@@ -26,17 +23,16 @@ export function sendToCio(
   if (!writeKey) return;
 
   const cio = new PipelinesClient(writeKey, {
-    region: RegionUS,
-    // Otherwise a bad key or payload is accepted with a 200 and dropped.
+    // Use strict mode to ensure errors aren't silently dropped.
     strictMode: true,
-    // Retries would trade a dropped event for a slow request. Wrong trade here.
+    // Don't retry - we'd rather drop an event than slow down the request.
     retry: { maxRetries: 0 },
   });
 
   const done = call(cio).catch((err) => {
-    console.error("Customer.io call failed", err);
+    console.error("Customer.io API request failed", err);
   });
 
-  // Outlive the response where possible; otherwise let it float.
+  // Outlive the response where possible.
   ctx?.waitUntil(done);
 }
