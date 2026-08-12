@@ -4,22 +4,31 @@ import "@uppy/core/css/style.min.css";
 import "@uppy/dashboard/css/style.min.css";
 ---
 
-<Base title="Upload a clip">
-  <h1>Upload a clip</h1>
+<Base title="Upload media">
+  <h1>Upload media</h1>
   <div id="uppy"></div>
   <p id="status"></p>
 
   <script>
-    import Uppy from "@uppy/core";
+    import Uppy, { RestrictionError } from "@uppy/core";
     import Dashboard from "@uppy/dashboard";
     import Tus from "@uppy/tus";
+    import XHRUpload from "@uppy/xhr-upload";
+    import { uploadKind, uploadRestriction, type UploadKind } from "@/lib/images";
 
     const status = document.querySelector<HTMLParagraphElement>("#status")!;
+    let batchKind: UploadKind | undefined;
+    let transport: "Tus" | "XHRUpload" | undefined;
 
     const uppy = new Uppy({
       debug: import.meta.env.DEV,
       autoProceed: false,
-      restrictions: { allowedFileTypes: ["video/*"], maxNumberOfFiles: 4 },
+      onBeforeFileAdded(file, files) {
+        const current = Object.values(files);
+        const error = uploadRestriction(file.type, current.map((item) => item.type));
+        if (error) throw new RestrictionError(error);
+        return true;
+      },
     })
       .use(Dashboard, {
         inline: true,
@@ -27,16 +36,48 @@ import "@uppy/dashboard/css/style.min.css";
         theme: "dark",
         height: 360,
         proudlyDisplayPoweredByUppy: false,
-      })
-      // Uppy's Tus plugin POSTs to our relay (/api/upload), which returns the
-      // one-time Stream upload URL via Location; Uppy then uploads the bytes
-      // straight to Stream using the tus protocol.
-      .use(Tus, { endpoint: "/api/upload", chunkSize: 150 * 1024 * 1024 });
+      });
+
+    const clearBatch = () => {
+      if (transport) {
+        const plugin = uppy.getPlugin(transport);
+        if (plugin) uppy.removePlugin(plugin);
+      }
+      batchKind = undefined;
+      transport = undefined;
+    };
+
+    uppy.on("file-added", (file) => {
+      if (batchKind) return;
+      batchKind = uploadKind(file.type)!;
+      if (batchKind === "video") {
+        // Tus POSTs to our relay, then streams each video directly to Stream.
+        uppy.use(Tus, { endpoint: "/api/upload/clip", chunkSize: 150 * 1024 * 1024 });
+        transport = "Tus";
+      } else {
+        uppy.use(XHRUpload, {
+          endpoint: "/api/upload/image",
+          method: "POST",
+          formData: false,
+          headers: (image) => ({ "Content-Type": image.type }),
+          timeout: 0,
+        });
+        transport = "XHRUpload";
+      }
+    });
+
+    uppy.on("file-removed", () => {
+      if (uppy.getFiles().length === 0) clearBatch();
+    });
 
     uppy.on("complete", (result) => {
       status.textContent = result.failed?.length
         ? "Upload failed. Please try again."
-        : "Uploaded! Processing — it'll appear on your profile shortly.";
+        : batchKind === "video"
+          ? "Uploaded! Processing — it'll appear on your profile shortly."
+          : "Images uploaded!";
+      uppy.clear();
+      clearBatch();
     });
   </script>
 </Base>

@@ -21,6 +21,12 @@
       "migrations_dir": "migrations",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "CLIPS",
+      "bucket_name": "clips",
+    },
+  ],
   // Not used yet: the tus upload relay stays on the REST API because the
   // binding has no tus support. Here for signed tokens / captions / management.
   // NOTE: no local emulator — add "remote": true when code actually calls it.

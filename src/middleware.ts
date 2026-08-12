@@ -55,7 +55,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Viewers are read-only: no uploads.
   if (
-    (pathname === "/upload" || pathname === "/api/upload") &&
+    (pathname === "/upload" || pathname.startsWith("/api/upload/")) &&
     locals.user?.role === "viewer"
   ) {
     return pathname.startsWith("/api/") ? forbidden() : redirect("/");
