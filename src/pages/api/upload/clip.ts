@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { clips } from "@/db/schema";
 import { sendToCio } from "@/lib/cio";
-import { requireUploadUser } from "@/lib/upload";
 import { createUploadUrl } from "@/lib/stream";
 
 /**
@@ -9,9 +8,8 @@ import { createUploadUrl } from "@/lib/stream";
  * metadata here, then streams the video directly to the returned Stream URL.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-  const { cfContext, db, env, session, user } = locals;
-  const uploader = requireUploadUser(session, user);
-  if (uploader instanceof Response) return uploader;
+  const { cfContext, db, env, user } = locals;
+  const uploader = user!;
 
   const length = request.headers.get("Upload-Length");
   if (!length) return new Response("Missing Upload-Length", { status: 400 });

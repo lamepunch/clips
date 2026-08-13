@@ -6,20 +6,20 @@ import { Input } from "@/components/starwind/input";
 import { Label } from "@/components/starwind/label";
 import { Textarea } from "@/components/starwind/textarea";
 import { clips } from "@/db/schema";
-import { forbidden, notFound } from "@/lib/http";
+import { requireClipOwner } from "@/lib/access";
+import { notFound } from "@/lib/http";
 
 const { request, redirect } = Astro;
 const { id } = Astro.params;
 const { db, user } = Astro.locals;
-
-if (!user) return Astro.redirect("/welcome");
 
 const c = id
   ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
   : undefined;
 
 if (!c) return notFound();
-if (c.userId !== user.id) return forbidden();
+const ownershipDenial = requireClipOwner(user, c);
+if (ownershipDenial) return ownershipDenial;
 
 if (request.method === "POST") {
   const form = await request.formData();

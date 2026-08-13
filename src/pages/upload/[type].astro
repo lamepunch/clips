@@ -1,0 +1,61 @@
+---
+import Base from "@/layouts/Base.astro";
+import "@uppy/core/css/style.min.css";
+import "@uppy/dashboard/css/style.min.css";
+
+const type = Astro.params.type;
+if (type !== "clip" && type !== "shot") return Astro.redirect("/upload");
+---
+
+<Base title={`Upload a ${type}`}>
+  <h1>Upload a {type}</h1>
+  <div id="uppy" data-type={type}></div>
+  <p id="status"></p>
+
+  <script>
+    import Uppy from "@uppy/core";
+    import Dashboard from "@uppy/dashboard";
+    import Tus from "@uppy/tus";
+    import XHRUpload from "@uppy/xhr-upload";
+
+    const target = document.querySelector<HTMLElement>("#uppy")!;
+    const type = target.dataset.type as "clip" | "shot";
+    const status = document.querySelector<HTMLParagraphElement>("#status")!;
+
+    const uppy = new Uppy({
+      debug: import.meta.env.DEV,
+      autoProceed: false,
+      restrictions:
+        type === "clip"
+          ? { allowedFileTypes: ["video/*"], maxNumberOfFiles: 4 }
+          : { allowedFileTypes: ["image/jpeg", "image/png", "image/webp"] },
+    }).use(Dashboard, {
+      inline: true,
+      target,
+      theme: "dark",
+      height: 360,
+      proudlyDisplayPoweredByUppy: false,
+    });
+
+    if (type === "clip") {
+      uppy.use(Tus, { endpoint: "/api/upload/clip", chunkSize: 150 * 1024 * 1024 });
+    } else {
+      uppy.use(XHRUpload, {
+        endpoint: "/api/upload/shot",
+        method: "POST",
+        formData: false,
+        headers: (shot) => ({ "Content-Type": shot.type }),
+        timeout: 0,
+      });
+    }
+
+    uppy.on("complete", (result) => {
+      status.textContent = result.failed?.length
+        ? "Upload failed. Please try again."
+        : type === "clip"
+          ? "Uploaded! Processing — it'll appear on your profile shortly."
+          : "Shots uploaded!";
+      uppy.clear();
+    });
+  </script>
+</Base>
