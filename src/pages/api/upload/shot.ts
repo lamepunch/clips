@@ -1,22 +1,33 @@
 import type { APIRoute } from "astro";
-import { imageExtension, imageObjectKey } from "@/lib/images";
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const { env, user } = locals;
-  const uploader = user!;
-  if (!request.body) return new Response("Missing shot body", { status: 400 });
+  const { headers, body } = request;
+  const { env } = locals;
 
-  const contentType = request.headers.get("Content-Type")?.split(";", 1)[0] ?? "";
-  if (!imageExtension(contentType)) {
-    return new Response("Unsupported shot type", { status: 400 });
+  if (!body) {
+    return new Response("Missing image body", { status: 400 });
   }
 
-  const key = imageObjectKey(uploader.slug, contentType);
+  // Get the content type from the request
+  const contentType = headers.get("Content-Type")?.split(";", 1)[0];
+  if (!contentType) {
+    return new Response("Missing content type from image", { status: 400 });
+  }
+
+  // Check if the content type is an image
+  if (!contentType.startsWith("image/")) {
+    return new Response("Unsupported image type", { status: 400 });
+  }
+
+  // Generate a random key for the image
+  const key = crypto.randomUUID();
+
   try {
-    await env.CLIPS.put(key, request.body, { httpMetadata: { contentType } });
+    // Upload the image to R2
+    await env.CLIPS.put(key, body, { httpMetadata: { contentType } });
     return Response.json({ key }, { status: 201 });
   } catch (err) {
-    console.error("shot upload failed", { key, err });
-    return new Response("Shot upload failed", { status: 502 });
+    console.error("r2 upload failed", { key, err });
+    return new Response("R2 upload failed", { status: 502 });
   }
 };

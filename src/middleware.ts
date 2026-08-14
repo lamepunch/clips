@@ -10,10 +10,15 @@ import { getAuth } from "./lib/auth";
  */
 export const onRequest = defineMiddleware(async (context, next) => {
   // Make all of the fun stuff available to each request
-  const { locals, request, redirect } = context;
+  const { locals, request, redirect, url } = context;
 
   // Cloudflare Workers
   locals.env = env;
+
+  // For the image route, skip any additional middleware processing
+  if (url.pathname.startsWith("/image/")) {
+    return next();
+  }
 
   // Drizzle
   const db = getDb(env);

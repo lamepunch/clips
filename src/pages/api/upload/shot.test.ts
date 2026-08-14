@@ -5,7 +5,7 @@ const call = (request: Request, locals: Record<string, unknown>) =>
   POST({ request, locals } as never);
 
 describe("POST /api/upload/shot", () => {
-  it("validates the body and image MIME type", async () => {
+  it("requires a body with an image MIME type", async () => {
     const env = { CLIPS: { put: vi.fn() } };
     expect(
       (
@@ -20,7 +20,7 @@ describe("POST /api/upload/shot", () => {
         await call(
           new Request("https://clips.test/api/upload/shot", {
             method: "POST",
-            headers: { "Content-Type": "image/gif" },
+            headers: { "Content-Type": "application/octet-stream" },
             body: "data",
           }),
           { env, user: { role: "user", slug: "grenuttag" } },
@@ -29,7 +29,24 @@ describe("POST /api/upload/shot", () => {
     ).toBe(400);
   });
 
-  it("streams an approved shot into the user's folder", async () => {
+  it("accepts any image MIME type", async () => {
+    const put = vi.fn();
+    const response = await call(
+      new Request("https://clips.test/api/upload/shot", {
+        method: "POST",
+        headers: { "Content-Type": "image/gif" },
+        body: "shot-data",
+      }),
+      { env: { CLIPS: { put } }, user: { role: "user", slug: "grenuttag" } },
+    );
+
+    expect(response.status).toBe(201);
+    expect(put).toHaveBeenCalledWith(expect.any(String), expect.any(ReadableStream), {
+      httpMetadata: { contentType: "image/gif" },
+    });
+  });
+
+  it("streams an approved shot under a UUID key", async () => {
     const put = vi.fn();
     const response = await call(
       new Request("https://clips.test/api/upload/shot", {
@@ -42,7 +59,7 @@ describe("POST /api/upload/shot", () => {
 
     expect(response.status).toBe(201);
     expect(put).toHaveBeenCalledWith(
-      expect.stringMatching(/^grenuttag\/[\w-]+\.png$/),
+      expect.stringMatching(/^[0-9a-f-]{36}$/),
       expect.any(ReadableStream),
       { httpMetadata: { contentType: "image/png" } },
     );

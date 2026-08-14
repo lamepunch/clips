@@ -1,16 +1,8 @@
 import type { APIRoute } from "astro";
-
-// quick napkin scribblings of how this should work:
-// clips.lamepunch.com/image/{id}/{size}
-// does image transformation through here: https://developers.cloudflare.com/images/optimization/transformations/transform-via-workers/
-// clips.lamepunch.com/image/{id}/thumbnail (300x300 thumbnail)
-// clips.lamepunch.com/image/{id}/preview (1280x720 preview)
-// clips.lamepunch.com/image/{id}/original (original size)
+import { notFound } from "@/lib/http";
 
 /**
- * Serves images from R2 storage with optional transformations.
- * @param param0
- * @returns
+ * Serves images from R2 storage
  */
 export const GET: APIRoute = async ({ locals, params }) => {
   const { env } = locals;
@@ -26,18 +18,29 @@ export const GET: APIRoute = async ({ locals, params }) => {
   }
 
   // Retrieve the image from R2
-  const list = await env.CLIPS.list();
-  console.log(list);
+  const image = await env.CLIPS.get(id!);
+  if (!image) return notFound();
 
-  /**
-  const object = await env.CLIPS.get(id!);
-  if (!object) {
-    return new Response("Image not found", { status: 404 });
+  // Create transformation object (resize and convert) based on size
+  let transform: ImageTransform = {};
+  if (size === "thumbnail") {
+    transform = { width: 500, height: 400, fit: "cover" };
+  } else if (size === "preview") {
+    transform = { width: 1280 };
   }
-    **/
 
-  // Apply transformations if needed
-  // Return the image
+  // Construct the response
+  const response = (
+    await env.IMAGES.input(image.body)
+      .transform(transform)
+      .output({ quality: 100, format: "image/avif" })
+  ).response();
 
-  return new Response(`Image ${id} with size ${size}`);
+  // Return the image with cache headers
+  return new Response(response.body, {
+    headers: {
+      ...Object.fromEntries(response.headers),
+      "Cache-Control": "public, max-age=604800, stale-while-revalidate=86400",
+    },
+  });
 };
