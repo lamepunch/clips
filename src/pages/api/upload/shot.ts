@@ -1,23 +1,19 @@
 import type { APIRoute } from "astro";
+import { badRequest } from "@/lib/http";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const { headers, body } = request;
   const { env } = locals;
 
-  if (!body) {
-    return new Response("Missing image body", { status: 400 });
-  }
+  if (!body) return badRequest("Missing image body");
 
   // Get the content type from the request
   const contentType = headers.get("Content-Type")?.split(";", 1)[0];
-  if (!contentType) {
-    return new Response("Missing content type from image", { status: 400 });
-  }
+  if (!contentType) return badRequest("Missing content type from image");
 
   // Check if the content type is an image
-  if (!contentType.startsWith("image/")) {
-    return new Response("Unsupported image type", { status: 400 });
-  }
+  if (!contentType.startsWith("image/"))
+    return badRequest("Unsupported image type");
 
   // Generate a random key for the image
   const key = crypto.randomUUID();
