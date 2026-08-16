@@ -52,7 +52,7 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
     },
     user: {
       additionalFields: {
-        slug: { type: "string", required: true, input: false },
+        slug: { type: "string", required: true, input: true },
       },
     },
     databaseHooks: {
