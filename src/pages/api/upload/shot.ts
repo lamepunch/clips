@@ -19,11 +19,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const key = crypto.randomUUID();
 
   try {
+    // Convert the image to AVIF if it isn't already
+    let image = body;
+    if (contentType !== "image/avif") {
+      // https://developers.cloudflare.com/images/tutorials/optimize-user-uploaded-image/
+      const response = (
+        await env.IMAGES.input(body).output({
+          quality: 100,
+          format: "image/avif",
+        })
+      ).response();
+
+      if (!response.body) throw new Error("Image conversion returned no body");
+
+      image = response.body;
+    }
+
     // Upload the image to R2
-    await env.CLIPS.put(key, body, { httpMetadata: { contentType } });
+    await env.CLIPS.put(key, image, {
+      httpMetadata: { contentType: "image/avif" },
+      customMetadata: {},
+    });
+
     return Response.json({ key }, { status: 201 });
   } catch (err) {
-    console.error("r2 upload failed", { key, err });
-    return new Response("R2 upload failed", { status: 502 });
+    console.error("shot upload failed", { key, err });
+    return new Response("Shot upload failed", { status: 502 });
   }
 };

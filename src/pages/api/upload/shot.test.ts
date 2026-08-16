@@ -31,37 +31,56 @@ describe("POST /api/upload/shot", () => {
 
   it("accepts any image MIME type", async () => {
     const put = vi.fn();
+    const converted = new ReadableStream();
+    const output = vi.fn().mockResolvedValue({
+      response: () => new Response(converted),
+    });
+    const input = vi.fn().mockReturnValue({ output });
     const response = await call(
       new Request("https://clips.test/api/upload/shot", {
         method: "POST",
         headers: { "Content-Type": "image/gif" },
         body: "shot-data",
       }),
-      { env: { CLIPS: { put } }, user: { role: "user", slug: "grenuttag" } },
+      {
+        env: { CLIPS: { put }, IMAGES: { input } },
+        user: { role: "user", slug: "grenuttag" },
+      },
     );
 
     expect(response.status).toBe(201);
-    expect(put).toHaveBeenCalledWith(expect.any(String), expect.any(ReadableStream), {
-      httpMetadata: { contentType: "image/gif" },
+    expect(input).toHaveBeenCalledWith(expect.any(ReadableStream));
+    expect(output).toHaveBeenCalledWith({ format: "image/avif" });
+    expect(put).toHaveBeenCalledWith(expect.any(String), converted, {
+      httpMetadata: { contentType: "image/avif" },
+      customMetadata: {},
     });
   });
 
-  it("streams an approved shot under a UUID key", async () => {
+  it("streams an AVIF shot unchanged under a UUID key", async () => {
     const put = vi.fn();
+    const input = vi.fn();
     const response = await call(
       new Request("https://clips.test/api/upload/shot", {
         method: "POST",
-        headers: { "Content-Type": "image/png; charset=binary" },
+        headers: { "Content-Type": "image/avif" },
         body: "shot-data",
       }),
-      { env: { CLIPS: { put } }, user: { role: "user", slug: "grenuttag" } },
+      {
+        env: { CLIPS: { put }, IMAGES: { input } },
+        user: { role: "user", slug: "grenuttag" },
+      },
     );
 
     expect(response.status).toBe(201);
+    expect(input).not.toHaveBeenCalled();
     expect(put).toHaveBeenCalledWith(
       expect.stringMatching(/^[0-9a-f-]{36}$/),
       expect.any(ReadableStream),
-      { httpMetadata: { contentType: "image/png" } },
+      {
+        httpMetadata: { contentType: "image/avif" },
+        customMetadata: {},
+      },
     );
   });
 
@@ -69,7 +88,7 @@ describe("POST /api/upload/shot", () => {
     const response = await call(
       new Request("https://clips.test/api/upload/shot", {
         method: "POST",
-        headers: { "Content-Type": "image/jpeg" },
+        headers: { "Content-Type": "image/avif" },
         body: "shot-data",
       }),
       {
