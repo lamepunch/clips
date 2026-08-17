@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Better Auth core tables
 // Keep these field names in sync with Better Auth's expectations.
@@ -124,6 +124,43 @@ export const clips = sqliteTable("clips", {
   occurredAt: integer("occurred_at", { mode: "timestamp" }),
 });
 
+/**
+ * A shot is a still image uploaded by a user.
+ */
+export const shots = sqliteTable(
+  "shots",
+  {
+    /** The ID of the shot, also used as the key in R2 */
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    /** Uploader of the shot */
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** SHA-256 of the source image before conversion */
+    sourceHash: text("source_hash").notNull(),
+    /** Game that this shot is from */
+    gameId: text("game_id").references(() => games.id, { onDelete: "set null" }),
+    /** Something hilarious and witty */
+    title: text("title").notNull().default(""),
+    /** Insightful commentary of what happens in the shot */
+    description: text("description").notNull().default(""),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    /** Time when the shot was uploaded */
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    /** Time when this shot was taken */
+    occurredAt: integer("occurred_at", { mode: "timestamp" }),
+  },
+  (shot) => [
+    uniqueIndex("shots_user_source_hash_unique").on(shot.userId, shot.sourceHash),
+  ],
+);
+
 export type Clip = typeof clips.$inferSelect;
 export type User = typeof user.$inferSelect;
 export type Game = typeof games.$inferSelect;
+export type Shot = typeof shots.$inferSelect;

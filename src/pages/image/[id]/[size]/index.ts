@@ -18,6 +18,15 @@ export const GET: APIRoute = async ({ locals, params }) => {
   const image = await env.CLIPS.get(id!);
   if (!image) return notFound();
 
+  const cacheControl = "public, max-age=604800, stale-while-revalidate=86400";
+
+  if (size === "full") {
+    const headers = new Headers();
+    image.writeHttpMetadata(headers);
+    headers.set("Cache-Control", cacheControl);
+    return new Response(image.body, { headers });
+  }
+
   // Create transformation object (resize and convert) based on size
   // Note: We render everything at 2x for high DPI displays but scale them down to 1x
   let transform: ImageTransform = {};
@@ -31,14 +40,14 @@ export const GET: APIRoute = async ({ locals, params }) => {
   const response = (
     await env.IMAGES.input(image.body)
       .transform(transform)
-      .output({ quality: 100, format: "image/avif" })
+      .output({ format: "image/avif" })
   ).response();
 
   // Return the transformed image with cache headers
   return new Response(response.body, {
     headers: {
       ...Object.fromEntries(response.headers),
-      "Cache-Control": "public, max-age=604800, stale-while-revalidate=86400",
+      "Cache-Control": cacheControl,
     },
   });
 };

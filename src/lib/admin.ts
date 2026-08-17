@@ -1,8 +1,8 @@
 import { getTableColumns } from "drizzle-orm";
-import { clips, games, user } from "@/db/schema";
+import { clips, games, shots, user } from "@/db/schema";
 
 // All tables that can be managed through the admin UI.
-export const adminTables = { user, games, clips } as const;
+export const adminTables = { user, games, clips, shots } as const;
 export type AdminTableName = keyof typeof adminTables;
 
 export const getAdminTable = (name?: string) =>

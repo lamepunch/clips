@@ -1,11 +1,12 @@
 import type { APIRoute } from "astro";
+import { shots } from "@/db/schema";
 import { badRequest } from "@/lib/http";
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const { headers, body } = request;
-  const { env } = locals;
+  const { headers } = request;
+  const { db, env, user } = locals;
 
-  if (!body) return badRequest("Missing image body");
+  if (!request.body) return badRequest("Missing image body");
 
   // Get the content type from the request
   const contentType = headers.get("Content-Type")?.split(";", 1)[0];
@@ -15,34 +16,56 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!contentType.startsWith("image/"))
     return badRequest("Unsupported image type");
 
+  const sourceHash = headers.get("X-Source-SHA256")?.toLowerCase();
+  if (!sourceHash) return badRequest("Missing source image hash");
+  if (!/^[0-9a-f]{64}$/.test(sourceHash))
+    return badRequest("Invalid source image hash");
+
   // Generate a random key for the image
   const key = crypto.randomUUID();
 
   try {
     // Convert the image to AVIF if it isn't already
-    let image = body;
+    let storedImage: ReadableStream | ArrayBuffer;
+    let inspectedImage: ReadableStream;
     if (contentType !== "image/avif") {
       // https://developers.cloudflare.com/images/tutorials/optimize-user-uploaded-image/
-      const response = (
-        await env.IMAGES.input(body).output({
-          quality: 100,
-          format: "image/avif",
-        })
-      ).response();
-
-      if (!response.body) throw new Error("Image conversion returned no body");
-
-      image = response.body;
+      const result = await env.IMAGES.input(request.body).output({
+        format: "image/avif",
+      });
+      storedImage = await result.response().arrayBuffer();
+      inspectedImage = new Response(storedImage).body!;
+    } else {
+      inspectedImage = request.clone().body!;
+      storedImage = request.body;
     }
 
     // Upload the image to R2
-    await env.CLIPS.put(key, image, {
-      httpMetadata: { contentType: "image/avif" },
-      customMetadata: {},
+    const [info] = await Promise.all([
+      env.IMAGES.info(inspectedImage),
+      env.CLIPS.put(key, storedImage, {
+        httpMetadata: { contentType: "image/avif" },
+        customMetadata: {},
+      }),
+    ]);
+
+    if (!("width" in info)) throw new Error("Image dimensions unavailable");
+
+    await db.insert(shots).values({
+      id: key,
+      userId: user!.id,
+      sourceHash,
+      width: info.width,
+      height: info.height,
     });
 
     return Response.json({ key }, { status: 201 });
   } catch (err) {
+    try {
+      await env.CLIPS.delete(key);
+    } catch (cleanupErr) {
+      console.error("shot cleanup failed", { key, err: cleanupErr });
+    }
     console.error("shot upload failed", { key, err });
     return new Response("Shot upload failed", { status: 502 });
   }

@@ -40,11 +40,33 @@ if (type !== "clip" && type !== "shot") return Astro.redirect("/upload");
     if (type === "clip") {
       uppy.use(Tus, { endpoint: "/api/upload/clip", chunkSize: 150 * 1024 * 1024 });
     } else {
+      uppy.addPreProcessor(async (fileIDs) => {
+        // Compute SHA-256 of each shot before upload to prevent duplicates
+        await Promise.all(
+          fileIDs.map(async (fileID) => {
+            const file = uppy.getFile(fileID);
+            if (!(file.data instanceof Blob)) throw new Error("Missing shot data");
+
+            const digest = await crypto.subtle.digest(
+              "SHA-256",
+              await file.data.arrayBuffer(),
+            );
+            const sourceHash = Array.from(new Uint8Array(digest), (byte) =>
+              byte.toString(16).padStart(2, "0"),
+            ).join("");
+            uppy.setFileMeta(fileID, { sourceHash });
+          }),
+        );
+      });
+
       uppy.use(XHRUpload, {
         endpoint: "/api/upload/shot",
         method: "POST",
         formData: false,
-        headers: (shot) => ({ "Content-Type": shot.type }),
+        headers: (shot) => ({
+          "Content-Type": shot.type,
+          "X-Source-SHA256": String(shot.meta.sourceHash),
+        }),
         timeout: 0,
       });
     }

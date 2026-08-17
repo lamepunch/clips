@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clips, games, user } from "@/db/schema";
+import { clips, games, shots, user } from "@/db/schema";
 import { formValues, getAdminTable, primaryKey } from "./admin";
 
 describe("getAdminTable", () => {
@@ -7,6 +7,7 @@ describe("getAdminTable", () => {
     expect(getAdminTable("games")).toBe(games);
     expect(getAdminTable("user")).toBe(user);
     expect(getAdminTable("clips")).toBe(clips);
+    expect(getAdminTable("shots")).toBe(shots);
   });
 
   it("returns undefined for unknown or missing names", () => {
