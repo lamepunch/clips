@@ -27,7 +27,7 @@ if (type !== "clip" && type !== "shot") return Astro.redirect("/upload");
       autoProceed: false,
       restrictions:
         type === "clip"
-          ? { allowedFileTypes: ["video/*"], maxNumberOfFiles: 4 }
+          ? { allowedFileTypes: ["video/*"] }
           : { allowedFileTypes: ["image/*"] },
     }).use(Dashboard, {
       inline: true,

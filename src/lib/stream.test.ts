@@ -59,9 +59,30 @@ describe("createUploadUrl", () => {
       Authorization: "Bearer token123",
       "Tus-Resumable": "1.0.0",
       "Upload-Length": "1024",
-      "Upload-Metadata": "filename dGVzdA==",
+      "Upload-Metadata": "filename dGVzdA==,maxDurationSeconds NjAw",
       "Upload-Creator": "user-1",
     });
+  });
+
+  it("replaces a client-supplied maxDurationSeconds with our own limit", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      headers: new Headers({
+        Location: "https://upload.example/abc",
+        "stream-media-id": "uid-1",
+      }),
+    });
+
+    await createUploadUrl(env, {
+      length: "1024",
+      // maxDurationSeconds of 99999, which must not survive.
+      metadata: "maxDurationSeconds OTk5OTk=,filename dGVzdA==",
+      creatorId: "user-1",
+    });
+
+    expect(fetchMock.mock.calls[0][1].headers["Upload-Metadata"]).toBe(
+      "filename dGVzdA==,maxDurationSeconds NjAw",
+    );
   });
 
   it("throws when the response lacks the Location header", async () => {
