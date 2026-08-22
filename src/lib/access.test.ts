@@ -27,7 +27,6 @@ function evaluate(pathname: string, options: AccessOptions = {}) {
 describe("route access policy", () => {
   it("allows the declared public routes without a session", () => {
     for (const pathname of [
-      "/",
       "/welcome",
       "/api/auth/callback/discord",
       "/api/webhooks/stream",
@@ -37,9 +36,10 @@ describe("route access policy", () => {
   });
 
   it("requires authentication everywhere else", () => {
-    const page = evaluate("/grenuttag");
-    expect(page).toMatchObject({ status: 302 });
-    expect(page?.headers.get("Location")).toBe("/welcome");
+    for (const page of [evaluate("/"), evaluate("/grenuttag")]) {
+      expect(page).toMatchObject({ status: 302 });
+      expect(page?.headers.get("Location")).toBe("/welcome");
+    }
 
     expect(evaluate("/api/private")).toMatchObject({ status: 401 });
     expect(evaluate("/grenuttag", { signedIn: true })).toBeUndefined();
@@ -66,10 +66,15 @@ describe("route access policy", () => {
     expect(evaluate("/api/upload/shot", { signedIn: true })).toBeUndefined();
   });
 
-  it("only exposes GET watch details to Discord's crawler", () => {
+  it("only exposes GET media details to Discord's crawler", () => {
     const discord = "Discordbot/2.0";
     expect(evaluate("/watch/clip-1", { userAgent: discord })).toBeUndefined();
+    expect(evaluate("/view/shot-1", { userAgent: discord })).toBeUndefined();
     expect(evaluate("/watch/clip-1")).toMatchObject({ status: 302 });
+    expect(evaluate("/view/shot-1")).toMatchObject({ status: 302 });
+    expect(evaluate("/view/shot-1/edit", { userAgent: discord })).toMatchObject({
+      status: 302,
+    });
     expect(
       evaluate("/watch/clip-1/edit", { userAgent: discord }),
     ).toMatchObject({ status: 302 });

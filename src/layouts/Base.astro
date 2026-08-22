@@ -1,7 +1,10 @@
 ---
 import "@/styles/starwind.css";
-import BrandDiscord from "@tabler/icons/filled/brand-discord.svg";
-import { Button } from "@/components/starwind/button";
+import Home from "@tabler/icons/outline/home.svg";
+import Logout from "@tabler/icons/outline/logout.svg";
+import Settings from "@tabler/icons/outline/settings.svg";
+import Upload from "@tabler/icons/outline/upload.svg";
+import User from "@tabler/icons/outline/user.svg";
 import {
   Dropdown,
   DropdownContent,
@@ -17,8 +20,15 @@ interface Props {
   description?: string;
   /** OpenGraph image URL; renders a large-image card. */
   image?: string;
+  /** OpenGraph type, only used alongside `image`. */
+  ogType?: string;
 }
-const { title = "Clips", description, image } = Astro.props;
+const {
+  title = "Clips",
+  description,
+  image,
+  ogType = "video.other",
+} = Astro.props;
 const { user } = Astro.locals;
 ---
 
@@ -38,7 +48,7 @@ const { user } = Astro.locals;
     {
       image && (
         <>
-          <meta property="og:type" content="video.other" />
+          <meta property="og:type" content={ogType} />
           <meta property="og:image" content={image} />
           <meta name="twitter:card" content="summary_large_image" />
         </>
@@ -46,19 +56,29 @@ const { user } = Astro.locals;
     }
   </head>
   <body>
-    <header class="flex items-center gap-4 p-4 border-b border-border">
-      <a href="/" class="font-semibold">Clips</a>
-      {
-        user && user.role !== "viewer" && (
-          <a href="/upload" class="text-primary hover:underline">
-            Upload
-          </a>
-        )
-      }
+    {
+      user && (
+        <header class="flex items-center gap-4 p-5 border-b border-border bg-neutral-800">
+          <div class="grid gap-0.5 font-semibold leading-none">
+            <span class="text-[0.625rem] tracking-[0.25em] uppercase">Lamepunch</span>
+            <span>Clips</span>
+          </div>
 
-      <div class="ml-auto">
-        {
-          user ? (
+          <a href="/" class="flex items-center gap-1.5 text-primary hover:underline">
+            <Home class="size-4" />
+            Home
+          </a>
+          {user.role !== "viewer" && (
+            <a
+              href="/upload"
+              class="flex items-center gap-1.5 text-primary hover:underline"
+            >
+              <Upload class="size-4" />
+              Upload
+            </a>
+          )}
+
+          <div class="ml-auto">
             <Dropdown>
               <DropdownTrigger class="flex items-center gap-2">
                 {user.image && (
@@ -76,28 +96,26 @@ const { user } = Astro.locals;
                 <DropdownLabel>{user.name}</DropdownLabel>
                 <DropdownSeparator />
                 <DropdownItem as="a" href={`/${user.slug}`}>
-                  My profile
+                  <User />
+                  Profile
                 </DropdownItem>
                 {user.role == "admin" && (
                   <DropdownItem as="a" href="/admin">
+                    <Settings />
                     Admin
                   </DropdownItem>
                 )}
                 <DropdownSeparator />
                 <DropdownItem as="button" type="button" id="sign-out" class="w-full">
+                  <Logout />
                   Sign out
                 </DropdownItem>
               </DropdownContent>
             </Dropdown>
-          ) : (
-            <Button type="button" id="sign-in" variant="secondary" size="sm">
-              <BrandDiscord class="size-4" />
-              Sign in
-            </Button>
-          )
-        }
-      </div>
-    </header>
+          </div>
+        </header>
+      )
+    }
 
     <script>
       import { authClient } from "@/lib/authClient";

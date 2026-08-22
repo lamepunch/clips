@@ -22,12 +22,13 @@ const hasPathPrefix = (pathname: string, prefix: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`);
 
 /**
- * Match only a watch detail URL, excluding nested routes such as /edit.
+ * Match only a media detail URL, excluding nested routes such as /edit.
  *
- * @example isWatchDetail("/watch/clip-1") // true
- * @example isWatchDetail("/watch/clip-1/edit") // false
+ * @example isMediaDetail("/view/shot-1") // true
+ * @example isMediaDetail("/watch/clip-1/edit") // false
  */
-const isWatchDetail = (pathname: string) => /^\/watch\/[^/]+$/.test(pathname);
+const isMediaDetail = (pathname: string) =>
+  /^\/(watch|view)\/[^/]+$/.test(pathname);
 
 /**
  * Ordered route policy source of truth. Object-level checks, such as clip
@@ -37,15 +38,15 @@ export const routePolicies: readonly RoutePolicy[] = [
   {
     name: "public",
     access: "public",
-    paths: ["/", "/welcome"],
+    paths: ["/welcome"],
     prefixes: ["/api/auth", "/api/webhooks"],
   },
   {
-    name: "discord-watch-embed",
+    name: "discord-media-embed",
     access: "public",
     matches: (request, pathname) =>
       request.method === "GET" &&
-      isWatchDetail(pathname) &&
+      isMediaDetail(pathname) &&
       isDiscordBot(request),
   },
   {

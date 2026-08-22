@@ -9,7 +9,7 @@ export const GET: APIRoute = async ({ locals, params }) => {
   const { id, size } = params;
 
   // Only allow specific sizes
-  const allowedSizes = ["thumbnail", "preview", "full"];
+  const allowedSizes = ["thumbnail", "preview", "embed", "full"];
   if (!allowedSizes.includes(size as string)) {
     return badRequest("Invalid size passed");
   }
@@ -30,17 +30,22 @@ export const GET: APIRoute = async ({ locals, params }) => {
   // Create transformation object (resize and convert) based on size
   // Note: We render everything at 2x for high DPI displays but scale them down to 1x
   let transform: ImageTransform = {};
+  // Link embeds get webp because Discord does not render avif reliably.
+  let format: ImageOutputOptions["format"] = "image/avif";
   if (size === "thumbnail") {
     transform = { width: 500, height: 400, fit: "cover" };
   } else if (size === "preview") {
     transform = { width: 2560 };
+  } else if (size === "embed") {
+    transform = { width: 1280 };
+    format = "image/webp";
   }
 
   // Construct the response
   const response = (
     await env.IMAGES.input(image.body)
       .transform(transform)
-      .output({ format: "image/avif" })
+      .output({ format })
   ).response();
 
   // Return the transformed image with cache headers

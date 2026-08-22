@@ -13,6 +13,8 @@ declare global {
     // (providing `cfContext`); we merge in our per-request additions.
     interface Locals {
       env: Env;
+      /** IANA zone for the visitor, for server-rendered dates. */
+      timezone: string;
       db: DB;
       auth: Auth;
       session: Auth["$Infer"]["Session"]["session"] | null;

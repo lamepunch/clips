@@ -20,6 +20,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
+  // ponytail: IP-derived, so a VPN gets the wrong zone; miniflare doesn't
+  // populate `cf` at all, hence the fallback.
+  const cf = request.cf as IncomingRequestCfProperties | undefined;
+  locals.timezone = cf?.timezone ?? "America/New_York";
+
   // Drizzle
   const db = getDb(env);
   locals.db = db;

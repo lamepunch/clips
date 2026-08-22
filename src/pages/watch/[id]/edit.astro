@@ -8,10 +8,11 @@ import { Textarea } from "@/components/starwind/textarea";
 import { clips } from "@/db/schema";
 import { requireClipOwner } from "@/lib/access";
 import { notFound } from "@/lib/http";
+import { fromLocalInput, toLocalInput } from "@/lib/time";
 
 const { request, redirect } = Astro;
 const { id } = Astro.params;
-const { db, user } = Astro.locals;
+const { db, timezone, user } = Astro.locals;
 
 const c = id
   ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
@@ -30,16 +31,14 @@ if (request.method === "POST") {
     .set({
       title: String(form.get("title") ?? ""),
       description: String(form.get("description") ?? ""),
-      // ponytail: Workers run in UTC, so the naive datetime-local string round-trips
-      // as UTC. Add explicit tz handling if users span timezones and it matters.
-      occurredAt: occurred ? new Date(occurred) : null,
+      occurredAt: occurred ? fromLocalInput(occurred, timezone) : null,
     })
     .where(eq(clips.id, c.id));
   return redirect(`/watch/${c.id}`);
 }
 
 const occurredValue = c.occurredAt
-  ? c.occurredAt.toISOString().slice(0, 16)
+  ? toLocalInput(c.occurredAt, timezone)
   : undefined;
 ---
 
