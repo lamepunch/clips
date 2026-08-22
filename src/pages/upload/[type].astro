@@ -66,6 +66,7 @@ if (type !== "clip" && type !== "shot") return Astro.redirect("/upload");
         headers: (shot) => ({
           "Content-Type": shot.type,
           "X-Source-SHA256": String(shot.meta.sourceHash),
+          "X-Filename": encodeURIComponent(shot.name),
         }),
         timeout: 0,
       });

@@ -21,6 +21,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!/^[0-9a-f]{64}$/.test(sourceHash))
     return badRequest("Invalid source image hash");
 
+  // R2 custom metadata goes out as x-amz-meta-* headers — printable ASCII only.
+  // The client percent-encodes; strip anything else so a hostile header can't
+  // fail the put, and cap length against R2's ~2 KiB metadata budget.
+  const filename = (headers.get("X-Filename") ?? "")
+    .replace(/[^\x20-\x7E]/g, "")
+    .slice(0, 256);
+
   // Generate a random key for the image
   const key = crypto.randomUUID();
 
@@ -45,7 +52,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       env.IMAGES.info(inspectedImage),
       env.CLIPS.put(key, storedImage, {
         httpMetadata: { contentType: "image/avif" },
-        customMetadata: {},
+        customMetadata: { uploaderId: user!.id, filename },
       }),
     ]);
 

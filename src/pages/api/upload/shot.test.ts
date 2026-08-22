@@ -90,7 +90,7 @@ describe("POST /api/upload/shot", () => {
     expect(info).toHaveBeenCalledWith(expect.any(ReadableStream));
     expect(put).toHaveBeenCalledWith(expect.any(String), expect.any(ArrayBuffer), {
       httpMetadata: { contentType: "image/avif" },
-      customMetadata: {},
+      customMetadata: { uploaderId: "user-1", filename: "" },
     });
     expect(values).toHaveBeenCalledWith({
       id: expect.any(String),
@@ -129,9 +129,41 @@ describe("POST /api/upload/shot", () => {
       expect.any(ReadableStream),
       {
         httpMetadata: { contentType: "image/avif" },
-        customMetadata: {},
+        customMetadata: { uploaderId: "user-1", filename: "" },
       },
     );
+  });
+
+  it("sanitizes the filename before attaching it to the R2 object", async () => {
+    const put = vi.fn();
+    const { db } = mockDb();
+    const response = await call(
+      new Request("https://clips.test/api/upload/shot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "image/avif",
+          "X-Source-SHA256": sourceHash,
+          // percent-encoded by the client, plus a stray raw non-ASCII byte
+          "X-Filename": `my%20shot\u00e9.png${"x".repeat(300)}`,
+        },
+        body: "shot-data",
+      }),
+      {
+        db,
+        env: {
+          CLIPS: { put },
+          IMAGES: { info: vi.fn().mockResolvedValue(imageInfo) },
+        },
+        user: { id: "user-1", role: "user", slug: "grenuttag" },
+      },
+    );
+
+    expect(response.status).toBe(201);
+    const { customMetadata } = put.mock.calls[0]![2];
+    expect(customMetadata.filename).toBe(
+      `my%20shot.png${"x".repeat(256 - "my%20shot.png".length)}`,
+    );
+    expect(customMetadata.filename).toHaveLength(256);
   });
 
   it("preserves the body length required by R2 while inspecting it", async () => {
@@ -142,6 +174,7 @@ describe("POST /api/upload/shot", () => {
         headers: {
           "Content-Type": "image/avif",
           "X-Source-SHA256": sourceHash,
+          "X-Filename": "shot%20name.avif",
         },
         body: "shot-data",
       }),
@@ -163,7 +196,12 @@ describe("POST /api/upload/shot", () => {
     expect(response.status).toBe(201);
     const { key } = (await response.json()) as { key: string };
     try {
-      expect(await (await workerEnv.CLIPS.get(key))?.text()).toBe("shot-data");
+      const stored = await workerEnv.CLIPS.get(key);
+      expect(await stored?.text()).toBe("shot-data");
+      expect(stored?.customMetadata).toEqual({
+        uploaderId: "user-1",
+        filename: "shot%20name.avif",
+      });
     } finally {
       await workerEnv.CLIPS.delete(key);
     }
