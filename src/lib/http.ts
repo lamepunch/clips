@@ -7,3 +7,5 @@ export const notFound = () => new Response("Not found", { status: 404 });
 export const unauthorized = () => new Response("Unauthorized", { status: 401 });
 export const forbidden = (message = "Forbidden") =>
   new Response(message, { status: 403 });
+export const tooLarge = (message = "Too large") =>
+  new Response(message, { status: 413 });

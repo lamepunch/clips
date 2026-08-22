@@ -72,21 +72,13 @@ export async function createUploadUrl(
   return { url, uid };
 }
 
-// Per Cloudflare's Workers webhook example.
-// https://developers.cloudflare.com/stream/manage-video-library/using-webhooks/#examples
-const getUtf8Bytes = (str: string) =>
-  new Uint8Array(
-    [...decodeURIComponent(encodeURIComponent(str))].map((c) =>
-      c.charCodeAt(0),
-    ),
-  );
+const utf8 = new TextEncoder();
 
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
+// workerd has crypto.subtle.timingSafeEqual, but Astro's tsconfig pulls in the
+// DOM lib for client scripts and that SubtleCrypto wins at type level.
+const subtleCrypto = crypto.subtle as typeof crypto.subtle & {
+  timingSafeEqual(a: ArrayBufferView, b: ArrayBufferView): boolean;
+};
 
 /**
  * Verify a Stream webhook signature, following Cloudflare's documented steps:
@@ -120,20 +112,18 @@ export async function verifyStreamWebhook(
   // Step 3: compute the expected HMAC-SHA256 hex digest (Web Crypto).
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
-    getUtf8Bytes(secret),
+    utf8.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     true,
     ["sign"],
   );
-  const sig = await crypto.subtle.sign(
-    "HMAC",
-    cryptoKey,
-    getUtf8Bytes(message),
-  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, utf8.encode(message));
   const expected = [...new Uint8Array(sig)]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  // Step 4: constant-time compare against the header's sig1.
-  return timingSafeEqual(expected, sig1);
+  // Step 4: constant-time compare against the header's sig1. timingSafeEqual
+  // throws rather than returning false when the byte lengths differ.
+  const [a, b] = [utf8.encode(expected), utf8.encode(sig1)];
+  return a.byteLength === b.byteLength && subtleCrypto.timingSafeEqual(a, b);
 }

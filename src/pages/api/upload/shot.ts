@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { shots } from "@/db/schema";
-import { badRequest } from "@/lib/http";
+import { badRequest, tooLarge } from "@/lib/http";
+
+const MAX_BYTES = 25 * 1024 * 1024;
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const { headers } = request;
@@ -20,6 +22,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!sourceHash) return badRequest("Missing source image hash");
   if (!/^[0-9a-f]{64}$/.test(sourceHash))
     return badRequest("Invalid source image hash");
+
+  // Bounds the arrayBuffer() below against the 128 MB isolate limit. Uppy caps
+  // nothing but the MIME type, so this is the only size check there is. An
+  // absent Content-Length (chunked upload) counts as unbounded.
+  // ponytail: raise the cap if real shots ever hit it.
+  const size = Number(headers.get("Content-Length"));
+  if (!size || size > MAX_BYTES) return tooLarge("Image too large");
 
   // R2 custom metadata goes out as x-amz-meta-* headers — printable ASCII only.
   // The client percent-encodes; strip anything else so a hostile header can't

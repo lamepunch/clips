@@ -60,6 +60,31 @@ describe("POST /api/upload/shot", () => {
     }
   });
 
+  it("rejects an upload without a bounded Content-Length", async () => {
+    const env = { CLIPS: { put: vi.fn() } };
+    const headers = {
+      "Content-Type": "image/avif",
+      "X-Source-SHA256": sourceHash,
+    };
+    // No Content-Length at all, then one over the 25 MiB cap.
+    const cases: Record<string, string>[] = [
+      {},
+      { "Content-Length": String(26 * 1024 * 1024) },
+    ];
+    for (const extra of cases) {
+      const response = await call(
+        new Request("https://clips.test/api/upload/shot", {
+          method: "POST",
+          headers: { ...headers, ...extra },
+          body: "shot-data",
+        }),
+        { env, user: { id: "user-1", role: "user", slug: "grenuttag" } },
+      );
+      expect(response.status).toBe(413);
+    }
+    expect(env.CLIPS.put).not.toHaveBeenCalled();
+  });
+
   it("accepts any image MIME type", async () => {
     const put = vi.fn();
     const info = vi.fn().mockResolvedValue(imageInfo);
@@ -74,6 +99,7 @@ describe("POST /api/upload/shot", () => {
         headers: {
           "Content-Type": "image/gif",
           "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
         },
         body: "shot-data",
       }),
@@ -112,6 +138,7 @@ describe("POST /api/upload/shot", () => {
         headers: {
           "Content-Type": "image/avif",
           "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
         },
         body: "shot-data",
       }),
@@ -143,6 +170,7 @@ describe("POST /api/upload/shot", () => {
         headers: {
           "Content-Type": "image/avif",
           "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
           // percent-encoded by the client, plus a stray raw non-ASCII byte
           "X-Filename": `my%20shot\u00e9.png${"x".repeat(300)}`,
         },
@@ -174,6 +202,7 @@ describe("POST /api/upload/shot", () => {
         headers: {
           "Content-Type": "image/avif",
           "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
           "X-Filename": "shot%20name.avif",
         },
         body: "shot-data",
@@ -221,6 +250,7 @@ describe("POST /api/upload/shot", () => {
         headers: {
           "Content-Type": "image/png",
           "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
         },
         body: png,
       }),
@@ -251,6 +281,7 @@ describe("POST /api/upload/shot", () => {
         headers: {
           "Content-Type": "image/avif",
           "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
         },
         body: "shot-data",
       }),
