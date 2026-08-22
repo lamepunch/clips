@@ -18,6 +18,22 @@ export const streamIframeUrl = (env: Env, uid: string) =>
 export const streamThumbnailUrl = (env: Env, uid: string) =>
   `${streamBaseUrl(env, uid)}/thumbnails/thumbnail.jpg`;
 
+const MAX_DURATION_SECONDS = 600;
+
+/**
+ * tus `Upload-Metadata` is comma-separated `key base64(value)` pairs. The
+ * client's metadata is forwarded as-is except for maxDurationSeconds, which is
+ * dropped and re-set here so an upload can't ask Stream for a longer clip.
+ */
+const withMaxDuration = (metadata: string) =>
+  [
+    ...metadata
+      .split(",")
+      .map((pair) => pair.trim())
+      .filter((pair) => pair && !pair.startsWith("maxDurationSeconds ")),
+    `maxDurationSeconds ${btoa(String(MAX_DURATION_SECONDS))}`,
+  ].join(",");
+
 /**
  * Create a direct creator upload URL that Uppy will use to
  * upload our clip to Cloudflare Stream
@@ -40,7 +56,7 @@ export async function createUploadUrl(
         Authorization: `Bearer ${env.STREAM_API_TOKEN}`,
         "Tus-Resumable": "1.0.0",
         "Upload-Length": opts.length,
-        "Upload-Metadata": opts.metadata,
+        "Upload-Metadata": withMaxDuration(opts.metadata),
         "Upload-Creator": opts.creatorId,
       },
     },
