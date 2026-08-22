@@ -1,0 +1,28 @@
+---
+type Props = {
+  items: { href: string; src: string; alt: string; title: string }[];
+  empty: string;
+};
+
+const { items, empty } = Astro.props;
+---
+
+{items.length === 0 && <p>{empty}</p>}
+
+<ul class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+  {
+    items.map((i) => (
+      <li>
+        <a href={i.href} class="group block">
+          <img
+            src={i.src}
+            alt={i.alt}
+            loading="lazy"
+            class="aspect-video w-full rounded-md object-cover"
+          />
+          <span class="mt-1 block group-hover:underline">{i.title}</span>
+        </a>
+      </li>
+    ))
+  }
+</ul>

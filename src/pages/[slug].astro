@@ -1,9 +1,28 @@
 ---
-import { and, desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import BrandDiscord from "@tabler/icons/outline/brand-discord.svg";
+import Calendar from "@tabler/icons/outline/calendar.svg";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/starwind/card";
+import MediaGrid from "@/components/MediaGrid.astro";
 import Base from "@/layouts/Base.astro";
-import { clips, user, ClipStatus } from "@/db/schema";
+import { user } from "@/db/schema";
 import { notFound } from "@/lib/http";
-import { streamThumbnailUrl } from "@/lib/stream";
+import {
+  clipItems,
+  countClips,
+  countShots,
+  shotItems,
+  userClips,
+  userShots,
+} from "@/lib/media";
+
+const RECENT = 8;
 
 const { db, env } = Astro.locals;
 const { slug } = Astro.params;
@@ -16,36 +35,116 @@ if (!u) {
   return notFound();
 }
 
-const l = await db
-  .select()
-  .from(clips)
-  .where(
-    and(eq(clips.userId, u.id), eq(clips.status, ClipStatus.READY)),
-  )
-  .orderBy(desc(clips.createdAt));
+const [recentClips, recentShots, clipCount, shotCount] = await Promise.all([
+  userClips(db, u.id, RECENT),
+  userShots(db, u.id, RECENT),
+  countClips(db, u.id),
+  countShots(db, u.id),
+]);
+
+const sections = [
+  {
+    type: "clips",
+    label: "Clips",
+    count: clipCount,
+    items: clipItems(env, recentClips),
+  },
+  {
+    type: "shots",
+    label: "Shots",
+    count: shotCount,
+    items: shotItems(recentShots),
+  },
+];
+
+// No bio column on `user` yet, so the section stays hidden.
+const bio: string | undefined = undefined;
+
+const joined = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  year: "numeric",
+}).format(u.createdAt);
 ---
 
 <Base title={`${u.name} · Clips`}>
-  <h1 class="text-2xl font-bold mb-4">{u.name}</h1>
-  {l.length === 0 && <p>No clips yet.</p>}
+  <div class="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
+    <Card size="sm">
+      <CardHeader>
+        <div class="flex items-center gap-3">
+          {
+            u.image && (
+              <img
+                src={u.image}
+                alt=""
+                width="64"
+                height="64"
+                class="size-16 rounded-full"
+              />
+            )
+          }
+          <div class="min-w-0">
+            <CardTitle><h1 class="truncate">{u.name}</h1></CardTitle>
+            <CardDescription>@{u.slug}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
 
-  <ul class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
-    {
-      l.map((c) => (
-        <li>
-          <a href={`/watch/${c.id}`} class="block group">
-            <img
-              src={streamThumbnailUrl(env, c.uid)}
-              alt={c.title || "Clip thumbnail"}
-              loading="lazy"
-              class="w-full aspect-video object-cover rounded-md"
-            />
-            {c.title && (
-              <span class="mt-1 block group-hover:underline">{c.title}</span>
-            )}
-          </a>
-        </li>
-      ))
-    }
-  </ul>
+      <CardContent class="grid gap-6">
+        <dl class="grid gap-3">
+          <div class="flex items-center gap-2">
+            <BrandDiscord class="size-4 text-muted-foreground" />
+            <div>
+              <dt class="text-muted-foreground">Discord</dt>
+              <dd>@{u.slug}</dd>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <Calendar class="size-4 text-muted-foreground" />
+            <div>
+              <dt class="text-muted-foreground">Joined</dt>
+              <dd><time datetime={u.createdAt.toISOString()}>{joined}</time></dd>
+            </div>
+          </div>
+        </dl>
+
+        {
+          bio && (
+            <section aria-labelledby="bio-heading" class="grid gap-1">
+              <h2 id="bio-heading" class="font-medium">Bio</h2>
+              <p class="text-muted-foreground">{bio}</p>
+            </section>
+          )
+        }
+      </CardContent>
+    </Card>
+
+    <div class="grid gap-8">
+      {
+        sections.map((s) => (
+          <section aria-labelledby={`${s.type}-heading`} class="grid gap-4">
+            <div class="flex items-end justify-between gap-4">
+              <div>
+                <h2 id={`${s.type}-heading`} class="text-2xl font-bold">
+                  {s.label}
+                </h2>
+                <p class="text-muted-foreground">
+                  {s.count} {s.count === 1 ? s.type.slice(0, -1) : s.type}
+                </p>
+              </div>
+              {s.count > RECENT && (
+                <a
+                  href={`/${u.slug}/${s.type}`}
+                  class="text-primary hover:underline"
+                >
+                  View all {s.count}
+                </a>
+              )}
+            </div>
+
+            <MediaGrid items={s.items} empty={`No ${s.type} yet.`} />
+          </section>
+        ))
+      }
+    </div>
+  </div>
 </Base>

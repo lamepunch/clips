@@ -2,9 +2,7 @@
 import Base from "@/layouts/Base.astro";
 import { user } from "@/db/schema";
 
-const { db, session } = Astro.locals;
-
-if (!session) return Astro.redirect("/welcome");
+const { db } = Astro.locals;
 
 const l = await db
   .select({

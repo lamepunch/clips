@@ -1,0 +1,51 @@
+---
+import { eq } from "drizzle-orm";
+import MediaDetail from "@/components/MediaDetail.astro";
+import Base from "@/layouts/Base.astro";
+import { shots } from "@/db/schema";
+import { notFound } from "@/lib/http";
+import { mediaMeta, mediaNeighbors } from "@/lib/media";
+
+const { db, user: viewer } = Astro.locals;
+const { id } = Astro.params;
+
+const s = id
+  ? await db.query.shots.findFirst({ where: eq(shots.id, id) })
+  : undefined;
+
+if (!s) {
+  return notFound();
+}
+
+const [{ uploader, game }, { prevHref, nextHref }] = await Promise.all([
+  mediaMeta(db, s),
+  mediaNeighbors(db, s, "shots"),
+]);
+---
+
+<Base
+  title={s.title || "Shot"}
+  description={s.description || undefined}
+  image={new URL(`/image/${s.id}/embed`, Astro.url).href}
+  ogType="website"
+>
+  <MediaDetail
+    title={s.title || "Untitled shot"}
+    description={s.description}
+    uploader={uploader}
+    game={game}
+    createdAt={s.createdAt}
+    occurredAt={s.occurredAt}
+    isUploader={s.userId === viewer?.id}
+    prevHref={prevHref}
+    nextHref={nextHref}
+  >
+    <img
+      src={`/image/${s.id}/preview`}
+      width={s.width}
+      height={s.height}
+      alt={s.title || "Shot"}
+      class="mx-auto max-h-[85svh] w-auto max-w-full"
+    />
+  </MediaDetail>
+</Base>

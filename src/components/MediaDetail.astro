@@ -1,0 +1,174 @@
+---
+import Calendar from "@tabler/icons/outline/calendar.svg";
+import ChevronLeft from "@tabler/icons/outline/chevron-left.svg";
+import ChevronRight from "@tabler/icons/outline/chevron-right.svg";
+import Clock from "@tabler/icons/outline/clock.svg";
+import DeviceGamepad2 from "@tabler/icons/outline/device-gamepad-2.svg";
+import Pencil from "@tabler/icons/outline/pencil.svg";
+import Trash from "@tabler/icons/outline/trash.svg";
+import { Button } from "@/components/starwind/button";
+import { Card, CardContent } from "@/components/starwind/card";
+import type { Game, User } from "@/db/schema";
+
+type Props = {
+  title: string;
+  description: string;
+  uploader?: User;
+  game?: Game;
+  createdAt: Date;
+  occurredAt: Date | null;
+  isUploader: boolean;
+  /** Omit to render Edit disabled — shots have no edit route yet. */
+  editHref?: string;
+  /** Neighbours in the uploader's library; omit to render that arrow disabled. */
+  prevHref?: string;
+  nextHref?: string;
+};
+
+const {
+  title,
+  description,
+  uploader,
+  game,
+  createdAt,
+  occurredAt,
+  isUploader,
+  editHref,
+  prevHref,
+  nextHref,
+} = Astro.props;
+
+const Prev = prevHref ? "a" : "span";
+const Next = nextHref ? "a" : "span";
+const step =
+  "absolute top-1/2 z-10 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-black/60 ring-1 ring-white/25";
+
+const fmt = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "long",
+  timeStyle: "short",
+  timeZone: Astro.locals.timezone,
+});
+---
+
+<div class="relative -mx-4 -mt-4 mb-6 bg-black">
+  <slot />
+
+  <Prev
+    href={prevHref}
+    aria-label="Previous"
+    aria-disabled={prevHref ? undefined : "true"}
+    class:list={[step, "left-2", prevHref ? "hover:bg-black/80" : "opacity-30"]}
+  >
+    <ChevronLeft class="size-6" />
+  </Prev>
+
+  <Next
+    href={nextHref}
+    aria-label="Next"
+    aria-disabled={nextHref ? undefined : "true"}
+    class:list={[step, "right-2", nextHref ? "hover:bg-black/80" : "opacity-30"]}
+  >
+    <ChevronRight class="size-6" />
+  </Next>
+</div>
+
+<div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
+  <div class="grid gap-3">
+    <h1 class="text-2xl font-bold">{title}</h1>
+
+    {
+      uploader && (
+        <a href={`/${uploader.slug}`} class="group flex w-fit items-center gap-2">
+          {uploader.image && (
+            <img
+              src={uploader.image}
+              alt=""
+              width="32"
+              height="32"
+              class="size-8 rounded-full"
+            />
+          )}
+          <span class="group-hover:underline">{uploader.name}</span>
+        </a>
+      )
+    }
+
+    {
+      description && (
+        <p class="whitespace-pre-line text-muted-foreground">{description}</p>
+      )
+    }
+
+    {
+      isUploader && (
+        <div class="flex gap-2">
+          <Button href={editHref} variant="outline" disabled={!editHref}>
+            <Pencil />
+            Edit
+          </Button>
+          {/* ponytail: no delete route yet, so the button is a placeholder. */}
+          <Button type="button" variant="error" disabled>
+            <Trash />
+            Delete
+          </Button>
+        </div>
+      )
+    }
+  </div>
+
+  <Card size="sm">
+    <CardContent class="grid gap-4">
+      {
+        game?.image && (
+          <img
+            src={game.image}
+            alt=""
+            width="264"
+            height="374"
+            class="mx-auto w-32 rounded-md"
+          />
+        )
+      }
+
+      <dl class="grid gap-3">
+        {
+          game && (
+            <div class="flex items-center gap-2">
+              <DeviceGamepad2 class="size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <dt class="text-muted-foreground">Game</dt>
+                <dd>{game.title}</dd>
+              </div>
+            </div>
+          )
+        }
+
+        <div class="flex items-center gap-2">
+          <Calendar class="size-4 shrink-0 text-muted-foreground" />
+          <div>
+            <dt class="text-muted-foreground">Uploaded</dt>
+            <dd>
+              <time datetime={createdAt.toISOString()}>{fmt.format(createdAt)}</time>
+            </dd>
+          </div>
+        </div>
+
+        {
+          occurredAt && (
+            <div class="flex items-center gap-2">
+              <Clock class="size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <dt class="text-muted-foreground">Occurred at</dt>
+                <dd>
+                  <time datetime={occurredAt.toISOString()}>
+                    {fmt.format(occurredAt)}
+                  </time>
+                </dd>
+              </div>
+            </div>
+          )
+        }
+      </dl>
+    </CardContent>
+  </Card>
+</div>

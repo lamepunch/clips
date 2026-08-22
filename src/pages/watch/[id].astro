@@ -1,24 +1,29 @@
 ---
 import { eq } from "drizzle-orm";
+import MediaDetail from "@/components/MediaDetail.astro";
 import Base from "@/layouts/Base.astro";
-import { Button } from "@/components/starwind/button";
 import { clips, ClipStatus } from "@/db/schema";
 import { notFound } from "@/lib/http";
+import { mediaMeta, mediaNeighbors } from "@/lib/media";
 import { streamIframeUrl, streamThumbnailUrl } from "@/lib/stream";
 
-const { db, env, user } = Astro.locals;
+const { db, env, user: viewer } = Astro.locals;
 const { id } = Astro.params;
 
 const c = id
   ? await db.query.clips.findFirst({ where: eq(clips.id, id) })
   : undefined;
 
-const isReady = c?.status === ClipStatus.READY;
-const isUploader = c?.userId === user?.id;
-
 if (!c) {
   return notFound();
 }
+
+const [{ uploader, game }, { prevHref, nextHref }] = await Promise.all([
+  mediaMeta(db, c),
+  mediaNeighbors(db, c, "clips"),
+]);
+
+const isReady = c.status === ClipStatus.READY;
 ---
 
 <Base
@@ -26,25 +31,33 @@ if (!c) {
   description={c.description || undefined}
   image={isReady ? streamThumbnailUrl(env, c.uid) : undefined}
 >
-  {c.title && <h1 class="text-2xl font-bold mb-4">{c.title}</h1>}
-  {
-    isReady ? (
-      <iframe
-        src={streamIframeUrl(env, c.uid)}
-        class="border-0 mx-auto w-full max-w-[calc(80svh*16/9)] aspect-video rounded-md"
-        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-        allowfullscreen
-      />
-    ) : (
-      <p>This clip is still processing. Please come back later!</p>
-    )
-  }
-  {c.description && <p class="mt-2">{c.description}</p>}
-  {
-    isUploader && (
-      <p class="mt-2">
-        <Button href={`/watch/${c.id}/edit`}>Edit</Button>
-      </p>
-    )
-  }
+  <MediaDetail
+    title={c.title || "Untitled clip"}
+    description={c.description}
+    uploader={uploader}
+    game={game}
+    createdAt={c.createdAt}
+    occurredAt={c.occurredAt}
+    isUploader={c.userId === viewer?.id}
+    editHref={`/watch/${c.id}/edit`}
+    prevHref={prevHref}
+    nextHref={nextHref}
+  >
+    <div class="mx-auto w-full max-w-[calc(85svh*16/9)]">
+      {
+        isReady ? (
+          <iframe
+            src={streamIframeUrl(env, c.uid)}
+            class="aspect-video w-full border-0"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+            allowfullscreen
+          />
+        ) : (
+          <p class="grid aspect-video place-items-center px-4 text-center">
+            This clip is still processing. Please come back later!
+          </p>
+        )
+      }
+    </div>
+  </MediaDetail>
 </Base>

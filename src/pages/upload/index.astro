@@ -1,0 +1,12 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Button } from "@/components/starwind/button";
+---
+
+<Base title="Upload">
+  <h1>What do you want to upload?</h1>
+  <div class="mt-6 flex gap-3">
+    <Button as="a" href="/upload/clip">Clip</Button>
+    <Button as="a" href="/upload/shot" variant="secondary">Shot</Button>
+  </div>
+</Base>

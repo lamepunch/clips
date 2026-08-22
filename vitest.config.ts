@@ -9,6 +9,8 @@ export default defineConfig({
       miniflare: {
         compatibilityDate: "2025-06-01",
         compatibilityFlags: ["nodejs_compat"],
+        images: { binding: "IMAGES" },
+        r2Buckets: ["CLIPS"],
       },
     }),
   ],

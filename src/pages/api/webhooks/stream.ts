@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { eq } from "drizzle-orm";
 import { ClipStatus, clips } from "@/db/schema";
-import { forbidden } from "@/lib/http";
+import { badRequest, forbidden } from "@/lib/http";
 import { verifyStreamWebhook } from "@/lib/stream";
 
 type StreamWebhookBody = {
@@ -36,14 +36,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
     body = JSON.parse(rawBody) as StreamWebhookBody;
   } catch (err) {
     console.error("stream webhook: malformed JSON body", err);
-    return new Response("Malformed body", { status: 400 });
+    return badRequest("Malformed body");
   }
 
   const uid = body.uid;
   const state = body.status?.state;
   if (!uid) {
     console.error("stream webhook: missing uid", { state });
-    return new Response("Missing uid", { status: 400 });
+    return badRequest("Missing uid");
   }
 
   const status =
