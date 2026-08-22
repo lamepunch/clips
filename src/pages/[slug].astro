@@ -1,5 +1,14 @@
 ---
 import { and, desc, eq } from "drizzle-orm";
+import BrandDiscord from "@tabler/icons/outline/brand-discord.svg";
+import Calendar from "@tabler/icons/outline/calendar.svg";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/starwind/card";
 import Base from "@/layouts/Base.astro";
 import { clips, user, ClipStatus } from "@/db/schema";
 import { notFound } from "@/lib/http";
@@ -23,29 +32,90 @@ const l = await db
     and(eq(clips.userId, u.id), eq(clips.status, ClipStatus.READY)),
   )
   .orderBy(desc(clips.createdAt));
+
+const joined = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  year: "numeric",
+}).format(u.createdAt);
 ---
 
 <Base title={`${u.name} · Clips`}>
-  <h1 class="text-2xl font-bold mb-4">{u.name}</h1>
-  {l.length === 0 && <p>No clips yet.</p>}
+  <div class="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
+    <Card size="sm">
+      <CardHeader>
+        <div class="flex items-center gap-3">
+          {
+            u.image && (
+              <img
+                src={u.image}
+                alt=""
+                width="64"
+                height="64"
+                class="size-16 rounded-full"
+              />
+            )
+          }
+          <div class="min-w-0">
+            <CardTitle><h1 class="truncate">{u.name}</h1></CardTitle>
+            <CardDescription>@{u.slug}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
 
-  <ul class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
-    {
-      l.map((c) => (
-        <li>
-          <a href={`/watch/${c.id}`} class="block group">
-            <img
-              src={streamThumbnailUrl(env, c.uid)}
-              alt={c.title || "Clip thumbnail"}
-              loading="lazy"
-              class="w-full aspect-video object-cover rounded-md"
-            />
-            {c.title && (
-              <span class="mt-1 block group-hover:underline">{c.title}</span>
-            )}
-          </a>
-        </li>
-      ))
-    }
-  </ul>
+      <CardContent class="grid gap-6">
+        <dl class="grid gap-3">
+          <div class="flex items-center gap-2">
+            <BrandDiscord class="size-4 text-muted-foreground" />
+            <div>
+              <dt class="text-muted-foreground">Discord</dt>
+              <dd>@{u.slug}</dd>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <Calendar class="size-4 text-muted-foreground" />
+            <div>
+              <dt class="text-muted-foreground">Joined</dt>
+              <dd><time datetime={u.createdAt.toISOString()}>{joined}</time></dd>
+            </div>
+          </div>
+        </dl>
+
+        <section aria-labelledby="bio-heading" class="grid gap-1">
+          <h2 id="bio-heading" class="font-medium">Bio</h2>
+          <p class="text-muted-foreground">Bio coming soon.</p>
+        </section>
+      </CardContent>
+    </Card>
+
+    <section aria-labelledby="clips-heading" class="grid gap-4">
+      <div>
+        <h2 id="clips-heading" class="text-2xl font-bold">Clips</h2>
+        <p class="text-muted-foreground">
+          {l.length} {l.length === 1 ? "clip" : "clips"}
+        </p>
+      </div>
+
+      {l.length === 0 && <p>No clips yet.</p>}
+
+      <ul class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+        {
+          l.map((c) => (
+            <li>
+              <a href={`/watch/${c.id}`} class="group block">
+                <img
+                  src={streamThumbnailUrl(env, c.uid)}
+                  alt={c.title || "Clip thumbnail"}
+                  loading="lazy"
+                  class="aspect-video w-full rounded-md object-cover"
+                />
+                {c.title && (
+                  <span class="mt-1 block group-hover:underline">{c.title}</span>
+                )}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
 </Base>
