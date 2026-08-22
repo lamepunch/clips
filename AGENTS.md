@@ -45,6 +45,10 @@ provider) and upload game clips (Cloudflare Stream via tus) and screenshots
   `comment:overrides` note in package.json before touching versions.
 - The `STREAM` binding exists but is unused — uploads go through the REST API
   because the binding has no tus support.
+- Sessions are served from Better Auth's cookie cache (5 min), so a role or ban
+  change outside sign-in takes up to 5 minutes to apply. `src/middleware.ts`
+  must keep forwarding the `Set-Cookie` from `getSession` or the cache dies
+  after one window.
 - `TWITCH_CLIENT_ID`/`_SECRET` are not user auth. They're client-credentials
   for IGDB game search (`src/lib/igdb.ts`).
 - Secrets live in `.dev.vars` (see `.dev.vars.example`), not `wrangler.jsonc`.

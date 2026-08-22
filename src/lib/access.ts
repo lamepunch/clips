@@ -1,7 +1,12 @@
 import { isDiscordBot } from "./discord";
 import { forbidden, unauthorized } from "./http";
 
-type AccessLevel = "public" | "authenticated" | "admin" | "upload";
+type AccessLevel =
+  | "public"
+  | "anonymous"
+  | "authenticated"
+  | "admin"
+  | "upload";
 type PolicyUser = { id?: string; role?: string | null } | null;
 
 type RoutePolicy = {
@@ -36,9 +41,17 @@ const isMediaDetail = (pathname: string) =>
  */
 export const routePolicies: readonly RoutePolicy[] = [
   {
+    // Signed out only. /welcome is CDN-cached (routeRules in astro.config.mjs)
+    // and Base renders the user header whenever there's a session, so letting a
+    // signed-in user render it would put their name and avatar in a response
+    // that gets served to everyone else.
+    name: "welcome",
+    access: "anonymous",
+    paths: ["/welcome"],
+  },
+  {
     name: "public",
     access: "public",
-    paths: ["/welcome"],
     prefixes: ["/api/auth", "/api/webhooks"],
   },
   {
@@ -102,6 +115,11 @@ export function getAccessDenial({
 
   // No policy matched or public route - allow access
   if (!policy || policy.access === "public") return;
+
+  // Signed-out routes send everyone else home
+  if (policy.access === "anonymous") {
+    return user ? redirect("/") : undefined;
+  }
 
   // Redirect to welcome page if not signed in
   // API routes return 401 instead of redirecting

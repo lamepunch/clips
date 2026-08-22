@@ -1,6 +1,7 @@
-import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createAuthMiddleware } from "better-auth/api";
+import { setCookieCache } from "better-auth/cookies";
+import { betterAuth } from "better-auth/minimal";
 import { admin } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { type DB, schema } from "@/db";
@@ -34,9 +35,17 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     database: drizzleAdapter(db, { provider: "sqlite", schema }),
-    // Use UUIDs for all generated IDs
-    advanced: { database: { generateId: () => crypto.randomUUID() } },
+    advanced: {
+      // Use UUIDs for all generated IDs
+      database: { generateId: () => crypto.randomUUID() },
+      // Cloudflare sets this on every request and overwrites whatever the
+      // client sent, so it skips the spoof-resistant `x-forwarded-for` parsing
+      // that Better Auth defaults to (and that drops multi-hop chains).
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
+    },
     logger: { level: import.meta.env.DEV ? "debug" : "error" },
+    // Serve the session from a signed cookie so most requests skip the DB.
+    session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
     socialProviders: {
       discord: {
         clientId: env.DISCORD_CLIENT_ID,
@@ -97,6 +106,14 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
                 .update(schema.user)
                 .set({ role })
                 .where(eq(schema.user.id, userId));
+              // The cookie cache was written with the pre-refresh role, so
+              // rewrite it or the next 5 minutes authorize against the old one.
+              const cachedUser = { ...session.user, role };
+              await setCookieCache(
+                c,
+                { session: session.session, user: cachedUser },
+                false,
+              );
             } catch (err) {
               // Keep the previous role rather than failing a valid sign-in.
               console.error("guild role refresh failed", err);
@@ -118,8 +135,6 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
         );
       }),
     },
-    // Roles: "user" (default) and "admin". Promote a user by setting
-    // user.role = "admin" (SQL, or admin.setRole once an admin exists).
     plugins: [admin()],
   });
 }

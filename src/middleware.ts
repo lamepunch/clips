@@ -5,8 +5,8 @@ import { getAccessDenial } from "./lib/access";
 import { getAuth } from "./lib/auth";
 
 /**
- * Middleware that exposes env, db, auth, and the resolved Better Auth session
- * on `locals`.
+ * Exposes env, db, auth, and the resolved Better Auth session on `locals`, runs
+ * the route access policy, and renews the session cookie cache on the way out.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
   // Make all of the fun stuff available to each request
@@ -31,7 +31,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Authentication
   const auth = getAuth(env, db, locals.cfContext);
-  const data = await auth.api.getSession({ headers: request.headers });
+  const { headers: authHeaders, response: data } = await auth.api.getSession({
+    headers: request.headers,
+    returnHeaders: true,
+  });
+  // `authHeaders` carries a renewed session cookie whenever Better Auth had to
+  // read the session from D1 instead of the cookie cache.
   locals.auth = auth;
   locals.session = data?.session ?? null;
   locals.user = data?.user ?? null;
@@ -49,5 +54,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return denial;
   }
 
-  return next();
+  const response = await next();
+
+  // Never on a routeRules-cached response: Cloudflare stores one copy and
+  // serves it to every visitor, so one user's session cookie would go out to
+  // all of them.
+  if (!response.headers.has("cloudflare-cdn-cache-control")) {
+    for (const cookie of authHeaders.getSetCookie()) {
+      response.headers.append("set-cookie", cookie);
+    }
+  }
+
+  return response;
 });

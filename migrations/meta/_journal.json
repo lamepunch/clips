@@ -15,6 +15,13 @@
       "when": 1786947024808,
       "tag": "0001_add-shots",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787421229960,
+      "tag": "0002_add-auth-indexes",
+      "breakpoints": true
     }
   ]
 }

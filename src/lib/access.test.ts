@@ -35,6 +35,12 @@ describe("route access policy", () => {
     }
   });
 
+  it("keeps signed-in users off the CDN-cached welcome page", () => {
+    const page = evaluate("/welcome", { signedIn: true });
+    expect(page).toMatchObject({ status: 302 });
+    expect(page?.headers.get("Location")).toBe("/");
+  });
+
   it("requires authentication everywhere else", () => {
     for (const page of [evaluate("/"), evaluate("/grenuttag")]) {
       expect(page).toMatchObject({ status: 302 });
