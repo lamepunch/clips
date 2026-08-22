@@ -39,3 +39,22 @@ export function fromLocalInput(value: string, tz: string) {
   const near = new Date(guess.getTime() - offset(guess));
   return new Date(guess.getTime() - offset(near));
 }
+
+/**
+ * The capture time in a Steam screenshot filename (`YYYYMMDDHHMMSS_N.ext`),
+ * which Steam writes in the player's own wall-clock time — so it reads exactly
+ * like a submitted `datetime-local` value.
+ *
+ * ponytail: minute precision, matching the editor; seconds are dropped. An
+ * impossible day like `0230` rolls into March rather than returning null,
+ * because Steam never emits one.
+ */
+export function fromSteamFilename(filename: string, tz: string) {
+  const m = filename.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})\d{2}_\d+\./);
+  if (!m) return null;
+  const naive = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}`;
+  // Catches month 13, hour 25 and friends before Intl throws on them.
+  return Number.isNaN(Date.parse(`${naive}:00Z`))
+    ? null
+    : fromLocalInput(naive, tz);
+}

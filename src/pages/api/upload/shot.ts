@@ -1,12 +1,13 @@
 import type { APIRoute } from "astro";
 import { shots } from "@/db/schema";
 import { badRequest, tooLarge } from "@/lib/http";
+import { fromSteamFilename } from "@/lib/time";
 
 const MAX_BYTES = 25 * 1024 * 1024;
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const { headers } = request;
-  const { db, env, user } = locals;
+  const { db, env, user, timezone } = locals;
 
   if (!request.body) return badRequest("Missing image body");
 
@@ -36,6 +37,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const filename = (headers.get("X-Filename") ?? "")
     .replace(/[^\x20-\x7E]/g, "")
     .slice(0, 256);
+
+  // Steam puts the capture time in the filename. Percent-encoding never touches
+  // the digits it's made of, so there's nothing to decode first.
+  const occurredAt = fromSteamFilename(filename, timezone);
 
   // Generate a random key for the image
   const key = crypto.randomUUID();
@@ -73,6 +78,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       sourceHash,
       width: info.width,
       height: info.height,
+      occurredAt,
     });
 
     return Response.json({ key }, { status: 201 });

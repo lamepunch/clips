@@ -23,10 +23,14 @@ describe("POST /api/upload/shot", () => {
     const env = { CLIPS: { put: vi.fn() } };
     expect(
       (
-        await call(new Request("https://clips.test/api/upload/shot", { method: "POST" }), {
-          env,
-          user: { role: "user", slug: "grenuttag" },
-        })
+        await call(
+          new Request("https://clips.test/api/upload/shot", { method: "POST" }),
+          {
+            env,
+            user: { role: "user", slug: "grenuttag" },
+            timezone: "America/New_York",
+          },
+        )
       ).status,
     ).toBe(400);
     expect(
@@ -37,7 +41,11 @@ describe("POST /api/upload/shot", () => {
             headers: { "Content-Type": "application/octet-stream" },
             body: "data",
           }),
-          { env, user: { role: "user", slug: "grenuttag" } },
+          {
+            env,
+            user: { role: "user", slug: "grenuttag" },
+            timezone: "America/New_York",
+          },
         )
       ).status,
     ).toBe(400);
@@ -107,6 +115,7 @@ describe("POST /api/upload/shot", () => {
         db,
         env: { CLIPS: { put }, IMAGES: { info, input } },
         user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
       },
     );
 
@@ -114,16 +123,21 @@ describe("POST /api/upload/shot", () => {
     expect(input).toHaveBeenCalledWith(expect.any(ReadableStream));
     expect(output).toHaveBeenCalledWith({ format: "image/avif" });
     expect(info).toHaveBeenCalledWith(expect.any(ReadableStream));
-    expect(put).toHaveBeenCalledWith(expect.any(String), expect.any(ArrayBuffer), {
-      httpMetadata: { contentType: "image/avif" },
-      customMetadata: { uploaderId: "user-1", filename: "" },
-    });
+    expect(put).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(ArrayBuffer),
+      {
+        httpMetadata: { contentType: "image/avif" },
+        customMetadata: { uploaderId: "user-1", filename: "" },
+      },
+    );
     expect(values).toHaveBeenCalledWith({
       id: expect.any(String),
       userId: "user-1",
       sourceHash,
       width: 1920,
       height: 1080,
+      occurredAt: null,
     });
   });
 
@@ -146,6 +160,7 @@ describe("POST /api/upload/shot", () => {
         db,
         env: { CLIPS: { put }, IMAGES: { info, input } },
         user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
       },
     );
 
@@ -183,6 +198,7 @@ describe("POST /api/upload/shot", () => {
           IMAGES: { info: vi.fn().mockResolvedValue(imageInfo) },
         },
         user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
       },
     );
 
@@ -219,6 +235,7 @@ describe("POST /api/upload/shot", () => {
           },
         },
         user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
       },
     );
 
@@ -258,6 +275,7 @@ describe("POST /api/upload/shot", () => {
         db,
         env: { CLIPS: workerEnv.CLIPS, IMAGES: workerEnv.IMAGES },
         user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
       },
     );
 
@@ -295,9 +313,44 @@ describe("POST /api/upload/shot", () => {
           IMAGES: { info: vi.fn().mockResolvedValue(imageInfo) },
         },
         user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
       },
     );
     expect(response.status).toBe(502);
     expect(deleteObject).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("reads occurredAt out of a Steam screenshot filename", async () => {
+    const put = vi.fn();
+    const info = vi.fn().mockResolvedValue(imageInfo);
+    const { db, values } = mockDb();
+    const response = await call(
+      new Request("https://clips.test/api/upload/shot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "image/avif",
+          "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
+          "X-Filename": "20240822143045_1.jpg",
+        },
+        body: "shot-data",
+      }),
+      {
+        db,
+        env: { CLIPS: { put }, IMAGES: { info } },
+        user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
+      },
+    );
+
+    expect(response.status).toBe(201);
+    expect(values).toHaveBeenCalledWith({
+      id: expect.any(String),
+      userId: "user-1",
+      sourceHash,
+      width: 1920,
+      height: 1080,
+      occurredAt: new Date("2024-08-22T18:30:00.000Z"),
+    });
   });
 });
