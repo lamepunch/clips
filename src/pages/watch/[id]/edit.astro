@@ -3,11 +3,22 @@ import { eq } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import { Button } from "@/components/starwind/button";
 import { Input } from "@/components/starwind/input";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/starwind/item";
 import { Label } from "@/components/starwind/label";
 import { Textarea } from "@/components/starwind/textarea";
 import { clips } from "@/db/schema";
 import { requireClipOwner } from "@/lib/access";
+import { resolveGameId } from "@/lib/games";
 import { notFound } from "@/lib/http";
+import { mediaMeta } from "@/lib/media";
 import { fromLocalInput, toLocalInput } from "@/lib/time";
 
 const { request, redirect } = Astro;
@@ -25,6 +36,9 @@ if (ownershipDenial) return ownershipDenial;
 if (request.method === "POST") {
   const form = await request.formData();
   const occurred = String(form.get("occurredAt") ?? "");
+  // Empty or unknown igdbId clears the game rather than failing the save.
+  const igdbId = Number(form.get("igdbId"));
+  const gameId = igdbId ? await resolveGameId(igdbId) : null;
 
   await db
     .update(clips)
@@ -32,6 +46,7 @@ if (request.method === "POST") {
       title: String(form.get("title") ?? ""),
       description: String(form.get("description") ?? ""),
       occurredAt: occurred ? fromLocalInput(occurred, timezone) : null,
+      gameId,
     })
     .where(eq(clips.id, c.id));
   return redirect(`/watch/${c.id}`);
@@ -40,6 +55,7 @@ if (request.method === "POST") {
 const occurredValue = c.occurredAt
   ? toLocalInput(c.occurredAt, timezone)
   : undefined;
+const { game } = await mediaMeta(db, c);
 ---
 
 <Base title="Edit">
@@ -64,6 +80,155 @@ const occurredValue = c.occurredAt
         value={occurredValue}
       />
     </div>
+    <div class="grid gap-2">
+      <Label for="game-search">Game</Label>
+      <Item id="game-selected" variant="outline" size="sm" hidden={!game}>
+        <ItemMedia variant="image">
+          <img
+            id="game-image"
+            src={game?.image ?? ""}
+            alt=""
+            width="264"
+            height="374"
+            class="w-10 rounded-sm"
+            hidden={!game?.image}
+          />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle id="game-title">{game?.title}</ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          <Button type="button" id="game-clear" variant="ghost" size="sm">
+            Clear
+          </Button>
+        </ItemActions>
+      </Item>
+      <input
+        type="hidden"
+        name="igdbId"
+        id="game-igdbId"
+        value={game?.igdbId ?? ""}
+      />
+      <Input
+        type="search"
+        id="game-search"
+        placeholder="Search games…"
+        autocomplete="off"
+      />
+      <ItemGroup id="game-results"></ItemGroup>
+    </div>
+
+    {/* Cloned per search result; the script fills in the slots. */}
+    <template id="game-result">
+      <Item
+        as="button"
+        type="button"
+        variant="outline"
+        size="sm"
+        class="w-full text-left"
+      >
+        <ItemMedia variant="image">
+          <img alt="" width="264" height="374" class="w-10 rounded-sm" />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle></ItemTitle>
+          <ItemDescription>in library</ItemDescription>
+        </ItemContent>
+      </Item>
+    </template>
     <Button type="submit" class="justify-self-start">Save</Button>
   </form>
+
+  <script>
+    type Result = {
+      igdbId: number;
+      title: string;
+      slug: string;
+      image: string | null;
+      saved: boolean;
+    };
+
+    const search = document.querySelector<HTMLInputElement>("#game-search")!;
+    const list = document.querySelector<HTMLElement>("#game-results")!;
+    const template =
+      document.querySelector<HTMLTemplateElement>("#game-result")!;
+    const selected = document.querySelector<HTMLElement>("#game-selected")!;
+    const image = document.querySelector<HTMLImageElement>("#game-image")!;
+    const title = document.querySelector<HTMLElement>("#game-title")!;
+    const igdbId = document.querySelector<HTMLInputElement>("#game-igdbId")!;
+
+    function select(g: Result | null) {
+      igdbId.value = g ? String(g.igdbId) : "";
+      title.textContent = g?.title ?? "";
+      image.src = g?.image ?? "";
+      image.hidden = !g?.image;
+      selected.hidden = !g;
+      list.innerHTML = "";
+      search.value = "";
+      shown = null;
+    }
+
+    document
+      .querySelector<HTMLButtonElement>("#game-clear")!
+      .addEventListener("click", () => select(null));
+
+    // The query the list currently shows; null when the list is empty or
+    // stale, so the next focus/keystroke refetches.
+    let shown: string | null = null;
+
+    let timer: ReturnType<typeof setTimeout>;
+    search.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(run, 300);
+    });
+    // Empty box on focus lists the games already added.
+    search.addEventListener("focus", run);
+
+    function showError(msg: string) {
+      const p = document.createElement("p");
+      p.className = "text-error text-sm";
+      p.textContent = msg;
+      list.replaceChildren(p);
+    }
+
+    async function run() {
+      const q = search.value.trim();
+      if (q === shown) return;
+
+      let games: Result[];
+      try {
+        const res = await fetch(`/api/games/search?q=${encodeURIComponent(q)}`);
+        if (!res.ok) {
+          showError(`Search failed (${res.status}). Please try again.`);
+          return;
+        }
+        games = await res.json();
+      } catch {
+        showError("Search failed. Check your connection and try again.");
+        return;
+      }
+
+      shown = q;
+      list.replaceChildren(...games.map(item));
+    }
+
+    /** One search result, from the <Item> markup in the page's template. */
+    function item(g: Result) {
+      const node = template.content.firstElementChild!.cloneNode(
+        true,
+      ) as HTMLElement;
+      const media = node.querySelector<HTMLElement>("[data-slot=item-media]")!;
+      const hint = node.querySelector<HTMLElement>(
+        "[data-slot=item-description]",
+      )!;
+
+      if (g.image) media.querySelector("img")!.src = g.image;
+      else media.remove();
+      node.querySelector("[data-slot=item-title]")!.textContent = g.title;
+      if (!g.saved) hint.remove();
+      node.addEventListener("click", () => select(g));
+
+      return node;
+    }
+  </script>
 </Base>
