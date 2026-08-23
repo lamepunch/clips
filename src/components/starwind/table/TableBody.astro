@@ -1,10 +1,9 @@
 ---
 import type { HTMLAttributes } from "astro/types";
-import type { VariantProps } from "tailwind-variants";
 
 import { tableBody } from "./variants";
 
-type Props = HTMLAttributes<"tbody"> & VariantProps<typeof tableBody>;
+type Props = HTMLAttributes<"tbody">;
 
 const { class: className, ...rest } = Astro.props;
 ---

@@ -1,18 +1,20 @@
 ---
+import SelectPrimitive from "@starwind-ui/astro/select";
 import type { HTMLAttributes } from "astro/types";
-
 import { selectValue } from "./variants";
 
 type Props = HTMLAttributes<"span"> & {
-  /**
-   * The text to display when no value is selected
-   */
   placeholder?: string;
 };
 
-const { placeholder = "select", class: className, ...rest } = Astro.props;
+const { class: className, placeholder, ...rest } = Astro.props;
 ---
 
-<span class={selectValue({ class: className })} {...rest} data-slot="select-value">
-  {placeholder}
-</span>
+<SelectPrimitive.Value
+  class={selectValue({ class: className })}
+  placeholder={placeholder}
+  {...rest}
+  data-slot="select-value"
+>
+  <slot />
+</SelectPrimitive.Value>

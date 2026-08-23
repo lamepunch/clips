@@ -16,6 +16,7 @@ import {
   tableHeader,
   tableRow,
 } from "./variants";
+
 const TableVariants = {
   table,
   tableBody,
@@ -25,6 +26,17 @@ const TableVariants = {
   tableHead,
   tableHeader,
   tableRow,
+};
+
+const TableParts = {
+  Root: Table,
+  Body: TableBody,
+  Caption: TableCaption,
+  Cell: TableCell,
+  Foot: TableFoot,
+  Head: TableHead,
+  Header: TableHeader,
+  Row: TableRow,
 };
 
 export {
@@ -39,13 +51,4 @@ export {
   TableVariants,
 };
 
-export default {
-  Root: Table,
-  Body: TableBody,
-  Caption: TableCaption,
-  Cell: TableCell,
-  Foot: TableFoot,
-  Head: TableHead,
-  Header: TableHeader,
-  Row: TableRow,
-};
+export default TableParts;

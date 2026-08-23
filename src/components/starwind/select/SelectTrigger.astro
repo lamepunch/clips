@@ -1,36 +1,55 @@
 ---
+import SelectPrimitive from "@starwind-ui/astro/select";
 import ChevronDown from "@tabler/icons/outline/chevron-down.svg";
 import type { HTMLAttributes } from "astro/types";
 import type { VariantProps } from "tailwind-variants";
+import { selectTrigger, selectValue } from "./variants";
 
-import { selectTrigger } from "./variants";
+type Props = HTMLAttributes<"button"> & VariantProps<typeof selectTrigger> & {
+  asChild?: boolean;
+  iconClass?: string;
+  placeholder?: string;
+  showIcon?: boolean;
+  valueClass?: string;
+};
 
-type Props = Omit<HTMLAttributes<"button">, "role" | "type"> &
-  VariantProps<typeof selectTrigger> & {
-    /**
-     * The content to be rendered inside the select trigger
-     */
-    children: any;
-  };
-
-const { class: className, size, ...rest } = Astro.props;
+const {
+  asChild = false,
+  class: className,
+  iconClass: iconClassName,
+  placeholder,
+  showIcon = true,
+  size = "md",
+  valueClass: valueClassName,
+  ...rest
+} = Astro.props;
 ---
 
-<button
+<SelectPrimitive.Trigger
   class={selectTrigger({ size, class: className })}
-  type="button"
-  role="combobox"
-  aria-label="Select field"
-  aria-controls=""
-  aria-expanded="false"
-  aria-haspopup="listbox"
-  aria-autocomplete="none"
-  data-state="closed"
+  asChild={asChild}
   {...rest}
+  data-size={size}
   data-slot="select-trigger"
 >
-  <slot />
-  <slot name="icon">
-    <ChevronDown class="size-4 opacity-50" />
+  <slot>
+    <SelectPrimitive.Value
+      class={selectValue({ class: valueClassName })}
+      placeholder={placeholder}
+      data-slot="select-value"
+    />
   </slot>
-</button>
+
+  {
+    !asChild && showIcon && (
+      <SelectPrimitive.Icon
+        class={["text-muted-foreground pointer-events-none size-4", iconClassName].filter(Boolean).join(" ")}
+        data-slot="select-icon"
+      >
+        <slot name="icon">
+          <ChevronDown />
+        </slot>
+      </SelectPrimitive.Icon>
+    )
+  }
+</SelectPrimitive.Trigger>
