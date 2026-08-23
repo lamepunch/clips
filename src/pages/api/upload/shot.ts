@@ -21,17 +21,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const sourceHash = headers.get("X-Source-SHA256")?.toLowerCase();
   if (!sourceHash) return badRequest("Missing source image hash");
+
   if (!/^[0-9a-f]{64}$/.test(sourceHash))
     return badRequest("Invalid source image hash");
 
-  // Bounds the arrayBuffer() below against the 128 MB isolate limit. Uppy caps
-  // nothing but the MIME type, so this is the only size check there is. An
-  // absent Content-Length (chunked upload) counts as unbounded.
-  // ponytail: raise the cap if real shots ever hit it.
+  // Limit to 25 MB to avoid hitting the 128 MB isolate limit
   const size = Number(headers.get("Content-Length"));
   if (!size || size > MAX_BYTES) return tooLarge("Image too large");
 
-  // R2 custom metadata goes out as x-amz-meta-* headers — printable ASCII only.
+  // R2 custom metadata goes out as x-amz-meta-* headers: printable ASCII only.
   // The client percent-encodes; strip anything else so a hostile header can't
   // fail the put, and cap length against R2's ~2 KiB metadata budget.
   const filename = (headers.get("X-Filename") ?? "")
@@ -46,31 +44,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const key = crypto.randomUUID();
 
   try {
-    // Convert the image to AVIF if it isn't already
-    let storedImage: ReadableStream | ArrayBuffer;
-    let inspectedImage: ReadableStream;
-    if (contentType !== "image/avif") {
-      // https://developers.cloudflare.com/images/tutorials/optimize-user-uploaded-image/
-      const result = await env.IMAGES.input(request.body).output({
-        format: "image/avif",
-      });
-      storedImage = await result.response().arrayBuffer();
-      inspectedImage = new Response(storedImage).body!;
-    } else {
-      inspectedImage = request.clone().body!;
-      storedImage = request.body;
-    }
+    // Images decides the type, not the client header, so an SVG sent as
+    // image/png can't come back out of R2 as script. Only SVG lacks dimensions.
+    const info = await env.IMAGES.info(request.clone().body!);
+    if (!("width" in info)) return badRequest("Unsupported image type");
 
-    // Upload the image to R2
-    const [info] = await Promise.all([
-      env.IMAGES.info(inspectedImage),
-      env.CLIPS.put(key, storedImage, {
-        httpMetadata: { contentType: "image/avif" },
-        customMetadata: { uploaderId: user!.id, filename },
-      }),
-    ]);
-
-    if (!("width" in info)) throw new Error("Image dimensions unavailable");
+    await env.CLIPS.put(key, request.body, {
+      httpMetadata: { contentType: info.format },
+      customMetadata: { uploaderId: user!.id, filename },
+    });
 
     await db.insert(shots).values({
       id: key,

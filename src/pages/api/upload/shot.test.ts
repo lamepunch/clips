@@ -95,12 +95,8 @@ describe("POST /api/upload/shot", () => {
 
   it("accepts any image MIME type", async () => {
     const put = vi.fn();
-    const info = vi.fn().mockResolvedValue(imageInfo);
+    const info = vi.fn().mockResolvedValue({ ...imageInfo, format: "image/gif" });
     const { db, values } = mockDb();
-    const output = vi.fn().mockResolvedValue({
-      response: () => new Response("converted-shot"),
-    });
-    const input = vi.fn().mockReturnValue({ output });
     const response = await call(
       new Request("https://clips.test/api/upload/shot", {
         method: "POST",
@@ -113,21 +109,19 @@ describe("POST /api/upload/shot", () => {
       }),
       {
         db,
-        env: { CLIPS: { put }, IMAGES: { info, input } },
+        env: { CLIPS: { put }, IMAGES: { info } },
         user: { id: "user-1", role: "user", slug: "grenuttag" },
         timezone: "America/New_York",
       },
     );
 
     expect(response.status).toBe(201);
-    expect(input).toHaveBeenCalledWith(expect.any(ReadableStream));
-    expect(output).toHaveBeenCalledWith({ format: "image/avif" });
     expect(info).toHaveBeenCalledWith(expect.any(ReadableStream));
     expect(put).toHaveBeenCalledWith(
       expect.any(String),
-      expect.any(ArrayBuffer),
+      expect.any(ReadableStream),
       {
-        httpMetadata: { contentType: "image/avif" },
+        httpMetadata: { contentType: "image/gif" },
         customMetadata: { uploaderId: "user-1", filename: "" },
       },
     );
@@ -139,6 +133,68 @@ describe("POST /api/upload/shot", () => {
       height: 1080,
       occurredAt: null,
     });
+  });
+
+  it("labels the object with the format Images reports, not the client header", async () => {
+    const put = vi.fn();
+    const { db } = mockDb();
+    const response = await call(
+      new Request("https://clips.test/api/upload/shot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "image/png",
+          "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
+        },
+        body: "shot-data",
+      }),
+      {
+        db,
+        env: {
+          CLIPS: { put },
+          IMAGES: {
+            info: vi.fn().mockResolvedValue({ ...imageInfo, format: "image/jpeg" }),
+          },
+        },
+        user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
+      },
+    );
+
+    expect(response.status).toBe(201);
+    expect(put.mock.calls[0]![2].httpMetadata).toEqual({
+      contentType: "image/jpeg",
+    });
+  });
+
+  it("refuses an SVG, which info() answers without dimensions", async () => {
+    const put = vi.fn();
+    const { db } = mockDb();
+    const response = await call(
+      new Request("https://clips.test/api/upload/shot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "image/png",
+          "X-Source-SHA256": sourceHash,
+          "Content-Length": "1024",
+        },
+        body: "<svg xmlns='http://www.w3.org/2000/svg'><script/></svg>",
+      }),
+      {
+        db,
+        env: {
+          CLIPS: { put },
+          IMAGES: {
+            info: vi.fn().mockResolvedValue({ format: "image/svg+xml" }),
+          },
+        },
+        user: { id: "user-1", role: "user", slug: "grenuttag" },
+        timezone: "America/New_York",
+      },
+    );
+
+    expect(response.status).toBe(400);
+    expect(put).not.toHaveBeenCalled();
   });
 
   it("streams an AVIF shot unchanged under a UUID key", async () => {
@@ -253,7 +309,7 @@ describe("POST /api/upload/shot", () => {
     }
   });
 
-  it("preserves the body length after converting an image", async () => {
+  it("stores a real PNG untouched, typed by the real Images binding", async () => {
     const png = Uint8Array.from(
       atob(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -282,9 +338,9 @@ describe("POST /api/upload/shot", () => {
     expect(response.status).toBe(201);
     const { key } = (await response.json()) as { key: string };
     try {
-      expect((await workerEnv.CLIPS.get(key))?.httpMetadata?.contentType).toBe(
-        "image/avif",
-      );
+      const stored = await workerEnv.CLIPS.get(key);
+      expect(stored?.httpMetadata?.contentType).toBe("image/png");
+      expect(new Uint8Array(await stored!.arrayBuffer())).toEqual(png);
     } finally {
       await workerEnv.CLIPS.delete(key);
     }
