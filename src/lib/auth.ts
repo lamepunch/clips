@@ -37,7 +37,7 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
     database: drizzleAdapter(db, { provider: "sqlite", schema }),
     advanced: {
       // Use UUIDs for all generated IDs
-      database: { generateId: () => crypto.randomUUID() },
+      database: { generateId: () => crypto.randomUUID(), joins: true },
       // Cloudflare sets this on every request and overwrites whatever the
       // client sent, so it skips the spoof-resistant `x-forwarded-for` parsing
       // that Better Auth defaults to (and that drops multi-hop chains).

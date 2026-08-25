@@ -1,43 +1,53 @@
 ---
+import MenuPrimitive from "@starwind-ui/astro/menu";
 import Check from "@tabler/icons/outline/check.svg";
 import type { HTMLAttributes } from "astro/types";
-
-import { dropdownCheckboxItem } from "./variants";
+import { dropdownCheckboxItem, dropdownCheckboxItemIndicator } from "./variants";
 
 type Props = Omit<HTMLAttributes<"div">, "aria-checked" | "role"> & {
   checked?: boolean;
+  defaultChecked?: boolean;
   closeOnClick?: boolean;
   inset?: boolean;
   disabled?: boolean;
+  indicatorClass?: string;
+  showIndicator?: boolean;
 };
 
 const {
   class: className,
-  checked = false,
+  checked,
+  defaultChecked = false,
   closeOnClick = false,
   inset = false,
   disabled = false,
+  indicatorClass: indicatorClassName,
+  showIndicator = true,
   ...rest
 } = Astro.props;
 ---
 
-<div
+<MenuPrimitive.CheckboxItem
   class={dropdownCheckboxItem({ inset, disabled, class: className })}
-  role="menuitemcheckbox"
-  aria-checked={checked ? "true" : "false"}
-  aria-disabled={disabled ? "true" : undefined}
-  tabindex={disabled ? "-1" : "0"}
-  data-close-on-click={closeOnClick ? "true" : undefined}
-  data-disabled={disabled ? "true" : undefined}
-  data-slot="dropdown-checkbox-item"
+  checked={checked}
+  defaultChecked={defaultChecked}
+  closeOnClick={closeOnClick}
+  disabled={disabled}
   {...rest}
+  data-slot="dropdown-checkbox-item"
 >
-  <span
-    class="pointer-events-none absolute right-2 flex size-4 items-center justify-center opacity-0 group-aria-checked/dropdown-item:opacity-100"
-  >
-    <slot name="indicator">
-      <Check class="size-4" />
-    </slot>
-  </span>
+  {
+    showIndicator && (
+      <MenuPrimitive.CheckboxItemIndicator
+        class={dropdownCheckboxItemIndicator({ class: indicatorClassName })}
+        data-slot="dropdown-checkbox-item-indicator"
+      >
+        <slot name="indicator">
+          <Check class="size-4" />
+        </slot>
+      </MenuPrimitive.CheckboxItemIndicator>
+    )
+  }
+
   <slot />
-</div>
+</MenuPrimitive.CheckboxItem>

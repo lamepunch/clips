@@ -25,12 +25,19 @@ provider) and upload game clips (Cloudflare Stream via tus) and screenshots
 - `src/lib/http.ts` — `badRequest`/`notFound`/`unauthorized`/`forbidden`.
 - `src/db/schema.ts` — Drizzle schema. Better Auth tables must match its
   expectations; regenerate with `npm run auth:generate` after auth config changes.
+- `src/db/d1.ts` — the `sql` tag (d1-sql-tag) new queries use, plus `first()`.
 - `src/pages/api/**` — endpoints. `src/pages/image/[id]/[size]` serves R2 images
   and is skipped by auth middleware.
 
 ## Rules
 
 - `@/*` maps to `src/*`.
+- New queries use the `sql` tag, not Drizzle; existing Drizzle code stays until
+  you're already changing it. `schema.ts` stays either way — it makes migrations.
+  Ids come from `crypto.randomUUID()`, timestamps are unix seconds, and columns
+  are snake_case unless aliased.
+- Bindings come from `import { env } from "cloudflare:workers"`, inside a
+  function — never at module scope.
 - Don't hand-edit `worker-configuration.d.ts` (generated) or
   `src/components/starwind/**` (vendored by the Starwind CLI).
 - Schema change = `db:generate` + `db:migrate:local`, never hand-written SQL.

@@ -9,6 +9,7 @@ import {
   Dropdown,
   DropdownContent,
   DropdownItem,
+  DropdownLinkItem,
   DropdownLabel,
   DropdownSeparator,
   DropdownTrigger,
@@ -95,18 +96,18 @@ const { user } = Astro.locals;
               <DropdownContent align="end">
                 <DropdownLabel>{user.name}</DropdownLabel>
                 <DropdownSeparator />
-                <DropdownItem as="a" href={`/${user.slug}`}>
+                <DropdownLinkItem href={`/${user.slug}`}>
                   <User />
                   Profile
-                </DropdownItem>
+                </DropdownLinkItem>
                 {user.role == "admin" && (
-                  <DropdownItem as="a" href="/admin">
+                  <DropdownLinkItem href="/admin">
                     <Settings />
                     Admin
-                  </DropdownItem>
+                  </DropdownLinkItem>
                 )}
                 <DropdownSeparator />
-                <DropdownItem as="button" type="button" id="sign-out" class="w-full">
+                <DropdownItem id="sign-out" class="w-full">
                   <Logout />
                   Sign out
                 </DropdownItem>

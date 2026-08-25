@@ -2,58 +2,73 @@ import Select from "./Select.astro";
 import SelectContent from "./SelectContent.astro";
 import SelectGroup from "./SelectGroup.astro";
 import SelectItem from "./SelectItem.astro";
+import SelectItemIndicator from "./SelectItemIndicator.astro";
+import SelectItemText from "./SelectItemText.astro";
 import SelectLabel from "./SelectLabel.astro";
-import SelectSearch from "./SelectSearch.astro";
+import SelectScrollDownButton from "./SelectScrollDownButton.astro";
+import SelectScrollUpButton from "./SelectScrollUpButton.astro";
 import SelectSeparator from "./SelectSeparator.astro";
 import SelectTrigger from "./SelectTrigger.astro";
-import type { SelectChangeEvent, SelectEvent } from "./SelectTypes";
 import SelectValue from "./SelectValue.astro";
 import {
+  select,
   selectContent,
-  selectContentInner,
+  selectGroup,
   selectItem,
-  selectItemIcon,
+  selectItemIndicator,
+  selectItemText,
   selectLabel,
-  selectSearch,
+  selectList,
+  selectScrollButton,
   selectSeparator,
   selectTrigger,
   selectValue,
 } from "./variants";
+
 const SelectVariants = {
+  select,
   selectContent,
-  selectContentInner,
+  selectGroup,
   selectItem,
-  selectItemIcon,
+  selectItemIndicator,
+  selectItemText,
   selectLabel,
-  selectSearch,
+  selectList,
+  selectScrollButton,
   selectSeparator,
   selectTrigger,
   selectValue,
 };
 
-export {
-  Select,
-  type SelectChangeEvent,
-  SelectContent,
-  type SelectEvent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSearch,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-  SelectVariants,
-};
-
-export default {
+const SelectParts = {
   Root: Select,
   Trigger: SelectTrigger,
   Value: SelectValue,
   Content: SelectContent,
   Group: SelectGroup,
   Label: SelectLabel,
-  Search: SelectSearch,
   Item: SelectItem,
+  ItemText: SelectItemText,
+  ItemIndicator: SelectItemIndicator,
   Separator: SelectSeparator,
+  ScrollUpButton: SelectScrollUpButton,
+  ScrollDownButton: SelectScrollDownButton,
 };
+
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectItemIndicator,
+  SelectItemText,
+  SelectLabel,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+  SelectVariants,
+};
+
+export default SelectParts;

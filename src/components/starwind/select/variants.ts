@@ -1,66 +1,90 @@
 import { tv } from "tailwind-variants";
 
+export const select = tv({
+  base: "relative",
+});
+
 export const selectContent = tv({
   base: [
-    "starwind-select-content",
-    "bg-popover text-popover-foreground absolute z-50 min-w-[8rem] rounded-md border shadow-md",
-    "data-[state=open]:animate-in fade-in zoom-in-95 overflow-hidden will-change-transform",
+    "bg-popover text-popover-foreground z-50 min-w-[8rem] overflow-hidden rounded-md border shadow-md",
+    "data-[state=open]:animate-in fade-in zoom-in-95 outline-none",
     "data-[state=closed]:animate-out data-[state=closed]:fill-mode-forwards fade-out zoom-out-95",
+    "data-[side=bottom]:slide-in-from-top-2 data-[side=bottom]:slide-out-to-top-2 data-[side=top]:slide-in-from-bottom-2 data-[side=top]:slide-out-to-bottom-2",
+    "data-[side=right]:slide-in-from-left-2 data-[side=right]:slide-out-to-left-2 data-[side=left]:slide-in-from-right-2 data-[side=left]:slide-out-to-right-2",
+    "data-[align-trigger=true]:!animate-none",
+    "origin-(--transform-origin) pointer-events-auto fixed isolate w-(--anchor-width) will-change-transform",
   ],
   variants: {
-    side: {
-      bottom: "slide-in-from-top-2 slide-out-to-top-2 top-full",
-      top: "slide-in-from-bottom-2 slide-out-to-bottom-2 bottom-full",
-    },
-    align: {
-      start: "slide-in-from-left-1 slide-out-to-left-1 left-0",
-      center: "left-1/2 -translate-x-1/2",
-      end: "slide-in-from-right-1 slide-out-to-right-1 right-0",
-    },
     size: {
       sm: "text-sm [&_[data-slot=select-label]]:text-xs",
       md: "text-base [&_[data-slot=select-label]]:text-sm",
       lg: "text-lg [&_[data-slot=select-label]]:text-base",
     },
   },
-  defaultVariants: { side: "bottom", align: "start", size: "md" },
+  defaultVariants: {
+    size: "md",
+  },
 });
 
-export const selectContentInner = tv({
-  base: "max-h-96 w-full min-w-(--select-trigger-width) overflow-y-auto p-1",
+export const selectGroup = tv({
+  base: "",
 });
 
 export const selectItem = tv({
   base: [
-    "relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-8 pl-2 outline-none select-none",
-    "data-[active]:bg-accent data-[active]:text-accent-foreground",
-    "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-    "not-aria-selected:[&_svg]:hidden aria-selected:[&_svg]:flex",
+    "data-highlighted:bg-accent data-highlighted:text-accent-foreground focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 outline-none select-none",
+    "data-disabled:pointer-events-none data-disabled:opacity-50",
+    "group/select-item [&>svg]:size-4 [&>svg]:shrink-0",
   ],
+  variants: {
+    inset: {
+      true: "pl-8",
+    },
+    disabled: {
+      true: "pointer-events-none opacity-50",
+    },
+  },
+  defaultVariants: {
+    inset: false,
+    disabled: false,
+  },
 });
 
-export const selectItemIcon = tv({
-  base: "absolute right-2 flex size-4 items-center justify-center",
-});
-
-export const selectLabel = tv({ base: "text-muted-foreground py-1.5 pr-8 pl-2" });
-
-export const selectSearch = tv({
+export const selectItemIndicator = tv({
   base: [
-    "placeholder:text-muted-foreground flex w-full border-0 bg-transparent px-0 py-2.5",
-    "ring-0 outline-none disabled:cursor-not-allowed disabled:opacity-50",
+    "pointer-events-none absolute right-2 flex size-4 items-center justify-center opacity-0 transition-opacity",
+    "data-[state=checked]:opacity-100 data-visible:opacity-100 data-hidden:opacity-0",
+    "[&>svg]:size-4 [&>svg]:shrink-0",
   ],
 });
 
-export const selectSeparator = tv({ base: "bg-muted -mx-1 my-1 h-px" });
+export const selectItemText = tv({
+  base: "flex flex-1 shrink-0 gap-2 whitespace-nowrap",
+});
+
+export const selectLabel = tv({
+  base: "text-muted-foreground px-2 py-1.5 font-medium",
+});
+
+export const selectList = tv({
+  base: "max-h-96 overflow-x-hidden overflow-y-auto p-1",
+});
+
+export const selectScrollButton = tv({
+  base: "bg-popover text-muted-foreground flex w-full cursor-default items-center justify-center py-1 [&>svg]:size-4",
+});
+
+export const selectSeparator = tv({
+  base: "bg-border -mx-1 my-1 h-px",
+});
 
 export const selectTrigger = tv({
   base: [
-    "starwind-select-trigger",
-    "border-input dark:bg-input/30 text-foreground ring-offset-background flex items-center justify-between gap-2 rounded-md border bg-transparent shadow-xs",
-    "focus-visible:border-outline focus-visible:ring-outline/50 transition-[color,box-shadow] outline-none focus-visible:ring-3",
-    "disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-    "aria-invalid:border-error aria-invalid:focus:ring-error/40 aria-invalid:focus:ring-3",
+    "border-input dark:bg-input/30 text-foreground ring-offset-background flex items-center justify-between gap-2 rounded-md border bg-transparent shadow-xs select-none",
+    "focus-visible:border-outline focus-visible:ring-outline/50 transition-[color,box-shadow] outline-none focus-visible:transition-none focus-visible:ring-3",
+    "disabled:cursor-not-allowed disabled:opacity-50 data-disabled:pointer-events-none data-disabled:opacity-50",
+    "data-placeholder:text-muted-foreground [&_[data-slot=select-value]]:line-clamp-1 [&_[data-slot=select-value]]:flex [&_[data-slot=select-value]]:items-center [&_[data-slot=select-value]]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+    "data-error-visible:border-error data-error-visible:focus-visible:ring-error/40 data-error-visible:focus-visible:ring-3",
   ],
   variants: {
     size: {
@@ -74,4 +98,6 @@ export const selectTrigger = tv({
   },
 });
 
-export const selectValue = tv({ base: "pointer-events-none" });
+export const selectValue = tv({
+  base: "pointer-events-none flex flex-1 text-left",
+});

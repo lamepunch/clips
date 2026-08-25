@@ -1,7 +1,7 @@
 {
   "name": "clips",
   "type": "module",
-  "version": "2026.7",
+  "version": "2026.8",
   "private": true,
   "scripts": {
     "dev": "astro dev",
@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.1",
+    "@starwind-ui/astro": "^1.2.0",
     "@tabler/icons": "^3.46.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.3.3",
@@ -31,6 +32,7 @@
     "astro": "^7.2.1",
     "better-auth": "^1.6.27",
     "customerio-node": "^5.2.0",
+    "d1-sql-tag": "^0.6.5",
     "drizzle-orm": "^0.45.2",
     "tailwind-merge": "^3.6.0",
     "tailwind-variants": "^3.3.1",

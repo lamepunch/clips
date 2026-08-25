@@ -1,6 +1,6 @@
 ---
+import SelectPrimitive from "@starwind-ui/astro/select";
 import type { HTMLAttributes } from "astro/types";
-
 import { selectSeparator } from "./variants";
 
 type Props = HTMLAttributes<"div">;
@@ -8,4 +8,8 @@ type Props = HTMLAttributes<"div">;
 const { class: className, ...rest } = Astro.props;
 ---
 
-<div class={selectSeparator({ class: className })} {...rest} data-slot="select-separator"></div>
+<SelectPrimitive.Separator
+  class={selectSeparator({ class: className })}
+  {...rest}
+  data-slot="select-separator"
+/>

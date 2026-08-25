@@ -1,65 +1,64 @@
 ---
+import SelectPrimitive from "@starwind-ui/astro/select";
 import type { HTMLAttributes } from "astro/types";
-
-import { selectContent, selectContentInner } from "./variants";
+import { selectContent, selectList } from "./variants";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * Side of the tooltip
-   * @default bottom
-   */
-  side?: "top" | "bottom";
-  /**
-   * Alignment of the dropdown
-   * @default start
-   */
   align?: "start" | "center" | "end";
-  /**
-   * Offset distance in pixels
-   * @default 4
-   */
+  alignOffset?: number;
+  alignItemWithTrigger?: boolean;
+  avoidCollisions?: boolean;
+  side?: "top" | "right" | "bottom" | "left";
   sideOffset?: number;
-  /**
-   * Open and close animation duration in milliseconds
-   * @default 150
-   */
-  animationDuration?: number;
-  /**
-   * Size of the select content
-   * @default md
-   */
   size?: "sm" | "md" | "lg";
+  portalContainer?: string;
+  disablePortal?: boolean;
 };
 
 const {
+  align = "start",
+  alignOffset = 0,
+  alignItemWithTrigger = true,
+  avoidCollisions = true,
   class: className,
   side = "bottom",
-  align = "start",
-  size = "md",
   sideOffset = 4,
-  animationDuration = 150,
+  size = "md",
+  portalContainer,
+  disablePortal = false,
   ...rest
 } = Astro.props;
 ---
 
-<div
-  class={selectContent({ side, align, size, class: className })}
-  role="listbox"
-  data-side={side}
-  data-align={align}
-  data-state="closed"
-  tabindex="-1"
-  style={{
-    // hide the content initially. Script will remove this
-    display: "none",
-    animationDuration: `${animationDuration}ms`,
-    marginTop: side === "bottom" ? `${sideOffset}px` : undefined,
-    marginBottom: side === "top" ? `${sideOffset}px` : undefined,
-  }}
-  {...rest}
-  data-slot="select-content"
+<SelectPrimitive.Portal
+  container={portalContainer}
+  disabled={disablePortal}
+  data-slot="select-portal"
 >
-  <div class={selectContentInner()}>
-    <slot />
-  </div>
-</div>
+  <SelectPrimitive.Positioner
+    align={align}
+    alignOffset={alignOffset}
+    alignItemWithTrigger={alignItemWithTrigger}
+    avoidCollisions={avoidCollisions}
+    side={side}
+    sideOffset={sideOffset}
+    data-slot="select-positioner"
+  >
+    <SelectPrimitive.Popup
+      class={selectContent({ size, class: className })}
+      align={align}
+      alignOffset={alignOffset}
+      avoidCollisions={avoidCollisions}
+      side={side}
+      sideOffset={sideOffset}
+      data-align-trigger={alignItemWithTrigger ? "true" : "false"}
+      {...rest}
+      data-size={size}
+      data-slot="select-content"
+    >
+      <SelectPrimitive.List class={selectList()} data-slot="select-list">
+        <slot />
+      </SelectPrimitive.List>
+    </SelectPrimitive.Popup>
+  </SelectPrimitive.Positioner>
+</SelectPrimitive.Portal>
