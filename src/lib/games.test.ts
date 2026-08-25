@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { first, sql } from "@/db/d1";
 import { resolveGameId } from "./games";
 
 const getGame = vi.hoisted(() => vi.fn());
@@ -8,20 +8,18 @@ vi.mock("@/lib/igdb", () => ({ getGame }));
 // The pool keeps D1 storage for the whole file, so clear what we insert.
 beforeEach(async () => {
   getGame.mockReset();
-  await env.DB.prepare("delete from games").run();
+  await sql`delete from games`.run();
 });
 
-const row = (id: string) =>
-  env.DB.prepare("select * from games where id = ?").bind(id).first();
+const row = (id: string) => first(sql`select * from games where id = ${id}`);
 
 describe("resolveGameId", () => {
   it("returns the existing row without calling IGDB", async () => {
     const id = crypto.randomUUID();
-    await env.DB.prepare(
-      "insert into games (id, igdb_id, title, slug) values (?, 42, 'Halo', 'halo')",
-    )
-      .bind(id)
-      .run();
+    await sql`
+      insert into games (id, igdb_id, title, slug)
+      values (${id}, 42, 'Halo', 'halo')
+    `.run();
 
     await expect(resolveGameId(42)).resolves.toBe(id);
     expect(getGame).not.toHaveBeenCalled();
@@ -50,7 +48,7 @@ describe("resolveGameId", () => {
     getGame.mockResolvedValue(null);
 
     await expect(resolveGameId(999)).resolves.toBeNull();
-    const { results } = await env.DB.prepare("select * from games").all();
+    const { results } = await sql`select * from games`.all();
     expect(results).toEqual([]);
   });
 });

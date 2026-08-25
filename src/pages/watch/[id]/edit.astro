@@ -194,20 +194,25 @@ const { game } = await mediaMeta(db, c);
     async function run() {
       const q = search.value.trim();
       if (q === shown) return;
+      // An awaited response must not replace results for a newer search.
+      const isStale = () => q !== search.value.trim();
 
       let games: Result[];
       try {
         const res = await fetch(`/api/games/search?q=${encodeURIComponent(q)}`);
+        if (isStale()) return;
         if (!res.ok) {
           showError(`Search failed (${res.status}). Please try again.`);
           return;
         }
         games = await res.json();
       } catch {
+        if (isStale()) return;
         showError("Search failed. Check your connection and try again.");
         return;
       }
 
+      if (isStale()) return;
       shown = q;
       list.replaceChildren(...games.map(item));
     }
