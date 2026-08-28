@@ -15,14 +15,19 @@ provider) and upload game clips (Cloudflare Stream via tus) and screenshots
 
 ## Layout
 
-- `src/middleware.ts` — puts `env`, `db`, `auth`, `session`, `user` on `locals`;
-  runs authorization. Use `Astro.locals`, don't re-create a db or auth client.
-- `src/lib/access.ts` — route policy table, the source of truth for who can
-  reach what. Object-level checks (clip ownership) stay in the route.
-- `src/lib/auth.ts` — Better Auth, built per request (bindings aren't available
-  at module scope). Discord guild membership decides the role: `admin`, `user`
-  (can upload), `viewer` (read-only). Refreshed on every sign-in.
-- `src/lib/http.ts` — `badRequest`/`notFound`/`unauthorized`/`forbidden`.
+- `src/middleware.ts` — puts `env`, `db`, `auth`, `cio`, `session`, `user` on
+  `locals`; runs authorization. Use `Astro.locals`, don't re-create clients.
+- `src/features/**` — application behavior. Keep single-file features flat;
+  use a feature folder when it has multiple modules.
+- `src/features/auth/access.ts` — route policy table, the source of truth for
+  who can reach what. Object-level checks (clip ownership) stay in the route.
+- `src/features/auth/server.ts` — Better Auth, built per request (bindings
+  aren't available at module scope). Discord guild membership decides the role:
+  `admin`, `user` (can upload), `viewer` (read-only). Refreshed on every sign-in.
+- `src/services/**` — external provider boundaries such as Discord, IGDB,
+  Customer.io, and Cloudflare Stream.
+- `src/utils/**` — small stateless, domain-neutral helpers such as HTTP error
+  responses and time conversion.
 - `src/db/schema.ts` — Drizzle schema. Better Auth tables must match its
   expectations; regenerate with `npm run auth:generate` after auth config changes.
 - `src/db/d1.ts` — the `sql` tag (d1-sql-tag) new queries use, plus `first()`.
@@ -57,5 +62,5 @@ provider) and upload game clips (Cloudflare Stream via tus) and screenshots
   must keep forwarding the `Set-Cookie` from `getSession` or the cache dies
   after one window.
 - `TWITCH_CLIENT_ID`/`_SECRET` are not user auth. They're client-credentials
-  for IGDB game search (`src/lib/igdb.ts`).
+  for IGDB game search (`src/services/igdb.ts`).
 - Secrets live in `.dev.vars` (see `.dev.vars.example`), not `wrangler.jsonc`.

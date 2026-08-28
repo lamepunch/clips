@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import MediaDetail from "@/components/MediaDetail.astro";
 import Base from "@/layouts/Base.astro";
 import { shots } from "@/db/schema";
-import { notFound } from "@/lib/http";
-import { mediaMeta, mediaNeighbors } from "@/lib/media";
+import { mediaMeta, mediaNeighbors } from "@/features/media";
+import { notFound } from "@/utils/http";
 
 const { db, user: viewer } = Astro.locals;
 const { id } = Astro.params;

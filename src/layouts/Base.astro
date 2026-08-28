@@ -119,7 +119,7 @@ const { user } = Astro.locals;
     }
 
     <script>
-      import { authClient } from "@/lib/authClient";
+      import { authClient } from "@/features/auth/client";
 
       document.querySelector("#sign-in")?.addEventListener("click", () => {
         authClient.signIn.social({

@@ -1,12 +1,13 @@
 import { env } from "cloudflare:workers";
 import { defineMiddleware } from "astro:middleware";
 import { getDb } from "./db";
-import { getAccessDenial } from "./lib/access";
-import { getAuth } from "./lib/auth";
+import { getAccessDenial } from "./features/auth/access";
+import { getAuth } from "./features/auth/server";
+import { getCio } from "./services/cio";
 
 /**
- * Exposes env, db, auth, and the resolved Better Auth session on `locals`, runs
- * the route access policy, and renews the session cookie cache on the way out.
+ * Exposes env, db, auth, cio, and the resolved Better Auth session on `locals`,
+ * runs the route access policy, and renews the session cookie cache.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
   // Make all of the fun stuff available to each request
@@ -20,6 +21,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
+  // Customer.io
+  locals.cio = getCio(env, locals.cfContext);
+
   // ponytail: IP-derived, so a VPN gets the wrong zone; miniflare doesn't
   // populate `cf` at all, hence the fallback.
   const cf = request.cf as IncomingRequestCfProperties | undefined;
@@ -30,7 +34,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   locals.db = db;
 
   // Authentication
-  const auth = getAuth(env, db, locals.cfContext);
+  const auth = getAuth(env, db, locals.cio);
   const { headers: authHeaders, response: data } = await auth.api.getSession({
     headers: request.headers,
     returnHeaders: true,
@@ -55,6 +59,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const response = await next();
+
+  if (
+    locals.user &&
+    request.method === "GET" &&
+    response.ok &&
+    response.headers.get("content-type")?.startsWith("text/html")
+  ) {
+    const referrer = request.headers.get("referer");
+    locals.cio.page({
+      userId: locals.user.id,
+      context: {
+        page: {
+          path: url.pathname,
+          search: url.search,
+          url: url.href,
+          ...(referrer ? { referrer } : {}),
+        },
+      },
+    });
+  }
 
   // Never on a routeRules-cached response: Cloudflare stores one copy and
   // serves it to every visitor, so one user's session cookie would go out to

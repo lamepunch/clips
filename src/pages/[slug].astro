@@ -12,7 +12,7 @@ import {
 import MediaGrid from "@/components/MediaGrid.astro";
 import Base from "@/layouts/Base.astro";
 import { user } from "@/db/schema";
-import { notFound } from "@/lib/http";
+import { notFound } from "@/utils/http";
 import {
   clipItems,
   countClips,
@@ -20,7 +20,7 @@ import {
   shotItems,
   userClips,
   userShots,
-} from "@/lib/media";
+} from "@/features/media";
 
 const RECENT = 8;
 

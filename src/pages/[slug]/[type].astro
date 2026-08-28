@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import MediaGrid from "@/components/MediaGrid.astro";
 import Base from "@/layouts/Base.astro";
 import { user } from "@/db/schema";
-import { notFound } from "@/lib/http";
-import { clipItems, shotItems, userClips, userShots } from "@/lib/media";
+import { clipItems, shotItems, userClips, userShots } from "@/features/media";
+import { notFound } from "@/utils/http";
 
 const { db, env } = Astro.locals;
 const { slug, type } = Astro.params;

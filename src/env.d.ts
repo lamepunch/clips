@@ -1,7 +1,8 @@
 /// <reference types="astro/client" />
 
-import type { Auth } from "./lib/auth";
+import type { Auth } from "./features/auth/server";
 import type { DB } from "./db";
+import type { Cio } from "./services/cio";
 
 // `Env` / `Cloudflare.Env` (bindings, vars, secrets) and the Workers runtime
 // types are generated from wrangler.jsonc into worker-configuration.d.ts by
@@ -16,6 +17,7 @@ declare global {
       /** IANA zone for the visitor, for server-rendered dates. */
       timezone: string;
       db: DB;
+      cio: Cio;
       auth: Auth;
       session: Auth["$Infer"]["Session"]["session"] | null;
       user: Auth["$Infer"]["Session"]["user"] | null;

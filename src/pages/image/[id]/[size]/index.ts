@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { notFound, badRequest } from "@/lib/http";
+import { notFound, badRequest } from "@/utils/http";
 
 /**
  * Serves images from R2 storage

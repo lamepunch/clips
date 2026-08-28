@@ -9,7 +9,7 @@ import {
   type Clip,
   type Shot,
 } from "@/db/schema";
-import { streamThumbnailUrl } from "@/lib/stream";
+import { streamThumbnailUrl } from "@/services/stream";
 
 /** Ready clips for a user, newest first. */
 export function userClips(db: DB, userId: string, limit?: number) {

@@ -1,5 +1,5 @@
-import { getGame } from "@/lib/igdb";
 import { first, sql } from "@/db/d1";
+import { getGame } from "@/services/igdb";
 
 /**
  * Get an existing game ID from the database, or create a new one from IGDB.

@@ -3,7 +3,7 @@ import { first, sql } from "@/db/d1";
 import { resolveGameId } from "./games";
 
 const getGame = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/igdb", () => ({ getGame }));
+vi.mock("@/services/igdb", () => ({ getGame }));
 
 // The pool keeps D1 storage for the whole file, so clear what we insert.
 beforeEach(async () => {

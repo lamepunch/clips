@@ -3,9 +3,9 @@ import { eq, getTableColumns } from "drizzle-orm";
 import Base from "@/layouts/Base.astro";
 import AdminFields from "@/components/AdminFields.astro";
 import { Button } from "@/components/starwind/button";
-import { formValues, getAdminTable, primaryKey } from "@/lib/admin";
-import { errorMessage } from "@/lib/errors";
-import { notFound } from "@/lib/http";
+import { formValues, getAdminTable, primaryKey } from "@/features/admin";
+import { errorMessage } from "@/utils/errors";
+import { notFound } from "@/utils/http";
 
 const { db } = Astro.locals;
 const { table: name, id } = Astro.params;

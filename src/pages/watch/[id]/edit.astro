@@ -15,11 +15,11 @@ import {
 import { Label } from "@/components/starwind/label";
 import { Textarea } from "@/components/starwind/textarea";
 import { clips } from "@/db/schema";
-import { requireClipOwner } from "@/lib/access";
-import { resolveGameId } from "@/lib/games";
-import { notFound } from "@/lib/http";
-import { mediaMeta } from "@/lib/media";
-import { fromLocalInput, toLocalInput } from "@/lib/time";
+import { requireClipOwner } from "@/features/auth/access";
+import { resolveGameId } from "@/features/games";
+import { mediaMeta } from "@/features/media";
+import { notFound } from "@/utils/http";
+import { fromLocalInput, toLocalInput } from "@/utils/time";
 
 const { request, redirect } = Astro;
 const { id } = Astro.params;

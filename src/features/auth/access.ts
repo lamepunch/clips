@@ -1,5 +1,5 @@
-import { isDiscordBot } from "./discord";
-import { forbidden, unauthorized } from "./http";
+import { isDiscordBot } from "@/services/discord";
+import { forbidden, unauthorized } from "@/utils/http";
 
 type AccessLevel =
   | "public"

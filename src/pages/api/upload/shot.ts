@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { shots } from "@/db/schema";
-import { badRequest, tooLarge } from "@/lib/http";
-import { fromSteamFilename } from "@/lib/time";
+import { badRequest, tooLarge } from "@/utils/http";
+import { fromSteamFilename } from "@/utils/time";
 
 const MAX_BYTES = 25 * 1024 * 1024;
 

@@ -5,18 +5,21 @@ import { betterAuth } from "better-auth/minimal";
 import { admin } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { type DB, schema } from "@/db";
-import { epochSeconds, sendToCio } from "./cio";
-import { getGuildRole, parseGuildIds, refreshGuildRole } from "./discord";
+import { epochSeconds, type Cio } from "@/services/cio";
+import {
+  getGuildRole,
+  parseGuildIds,
+  refreshGuildRole,
+} from "@/services/discord";
 
 export type Auth = ReturnType<typeof getAuth>;
 
 /**
  * Per-request Better Auth factory. Worker secrets/bindings aren't available at
  * module scope, so the instance is built from `env` + `db` inside each request
- * (see src/middleware.ts). `ctx` is the Workers ExecutionContext, used to send
- * analytics after the response.
+ * (see src/middleware.ts).
  */
-export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
+export function getAuth(env: Env, db: DB, cio: Cio) {
   const memberGuildIds = parseGuildIds(env.ALLOWED_GUILD_IDS);
   const viewerGuildIds = parseGuildIds(env.VIEWER_GUILD_IDS);
 
@@ -121,18 +124,16 @@ export function getAuth(env: Env, db: DB, ctx?: ExecutionContext) {
           }
         }
 
-        sendToCio(env, ctx, (cio) =>
-          cio.identify({
-            userId,
-            traits: {
-              email,
-              name,
-              slug,
-              role,
-              created_at: epochSeconds(session.user.createdAt),
-            },
-          }),
-        );
+        cio.identify({
+          userId,
+          traits: {
+            email,
+            name,
+            slug,
+            role,
+            created_at: epochSeconds(session.user.createdAt),
+          },
+        });
       }),
     },
     plugins: [admin()],

@@ -80,5 +80,5 @@
     "cssVariables": true
   },
   "componentDir": "src/components/starwind",
-  "utilsDir": "src/lib/utils"
+  "utilsDir": "src/utils"
 }

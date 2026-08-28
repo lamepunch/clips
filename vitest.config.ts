@@ -36,8 +36,15 @@ export default defineConfig({
     coverage: {
       provider: "istanbul",
       reporter: ["text", "html"],
-      include: ["src/lib/**/*.ts"],
-      exclude: ["src/lib/auth.ts", "src/lib/authClient.ts"],
+      include: [
+        "src/features/**/*.ts",
+        "src/services/**/*.ts",
+        "src/utils/**/*.ts",
+      ],
+      exclude: [
+        "src/features/auth/server.ts",
+        "src/features/auth/client.ts",
+      ],
     },
   },
 });

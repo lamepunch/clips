@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { sql } from "@/db/d1";
-import { searchGames } from "@/lib/igdb";
+import { searchGames } from "@/services/igdb";
 
 type Row = {
   igdbId: number;

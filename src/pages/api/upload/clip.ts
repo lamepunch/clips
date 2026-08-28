@@ -1,14 +1,13 @@
 import type { APIRoute } from "astro";
 import { clips } from "@/db/schema";
-import { sendToCio } from "@/lib/cio";
-import { createUploadUrl } from "@/lib/stream";
+import { createUploadUrl } from "@/services/stream";
 
 /**
  * Tus creation relay for direct creator uploads. The browser POSTs the tus
  * metadata here, then streams the video directly to the returned Stream URL.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-  const { cfContext, db, env, user } = locals;
+  const { cio, db, env, user } = locals;
   const uploader = user!;
 
   const length = request.headers.get("Upload-Length");
@@ -34,13 +33,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response("Upload init failed", { status: 502 });
   }
 
-  sendToCio(env, cfContext, (cio) =>
-    cio.track({
-      userId: uploader.id,
-      event: "Clip Uploaded",
-      properties: { uid: upload.uid },
-    }),
-  );
+  cio.track({
+    userId: uploader.id,
+    event: "Clip Uploaded",
+    properties: { uid: upload.uid },
+  });
 
   return new Response(null, {
     status: 201,

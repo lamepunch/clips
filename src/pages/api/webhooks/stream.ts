@@ -1,8 +1,8 @@
 import type { APIRoute } from "astro";
 import { eq } from "drizzle-orm";
 import { ClipStatus, clips } from "@/db/schema";
-import { badRequest, forbidden } from "@/lib/http";
-import { verifyStreamWebhook } from "@/lib/stream";
+import { verifyStreamWebhook } from "@/services/stream";
+import { badRequest, forbidden } from "@/utils/http";
 
 type StreamWebhookBody = {
   uid: string;
