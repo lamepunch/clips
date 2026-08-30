@@ -17,6 +17,8 @@ import {
 
 interface Props {
   title?: string;
+  /** Page identity for Customer.io; defaults to `title`. */
+  page?: string;
   /** OpenGraph description for link embeds (Discord). */
   description?: string;
   /** OpenGraph image URL; renders a large-image card. */
@@ -24,19 +26,24 @@ interface Props {
   /** OpenGraph type, only used alongside `image`. */
   ogType?: string;
 }
+
 const {
   title = "Clips",
+  page = title,
   description,
   image,
   ogType = "video.other",
 } = Astro.props;
+
 const { user } = Astro.locals;
+
+Astro.locals.page = page;
 ---
 
 <!doctype html>
 <html lang="en-us" class="dark">
   <head>
-    <title>{title} &middot; Lamepunch</title>
+    <title>{title} · Lamepunch</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 

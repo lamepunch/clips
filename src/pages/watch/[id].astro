@@ -28,6 +28,7 @@ const isReady = c.status === ClipStatus.READY;
 
 <Base
   title={c.title || "Clip"}
+  page="Watch Clip"
   description={c.description || undefined}
   image={isReady ? streamThumbnailUrl(env, c.uid) : undefined}
 >

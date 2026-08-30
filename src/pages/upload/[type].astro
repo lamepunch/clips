@@ -7,7 +7,7 @@ const type = Astro.params.type;
 if (type !== "clip" && type !== "shot") return Astro.redirect("/upload");
 ---
 
-<Base title={`Upload a ${type}`}>
+<Base title={`Upload a ${type}`} name={`Upload ${type}`}>
   <h1>Upload a {type}</h1>
   <div id="uppy" data-type={type}></div>
   <p id="status"></p>

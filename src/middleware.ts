@@ -66,16 +66,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response.ok &&
     response.headers.get("content-type")?.startsWith("text/html")
   ) {
-    const referrer = request.headers.get("referer");
     locals.cio.page({
       userId: locals.user.id,
-      context: {
-        page: {
-          path: url.pathname,
-          search: url.search,
-          url: url.href,
-          ...(referrer ? { referrer } : {}),
-        },
+      properties: {
+        ...(locals.page ? { name: locals.page } : {}),
+        path: url.pathname,
+        search: url.search,
+        url: url.href,
       },
     });
   }

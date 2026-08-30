@@ -25,6 +25,7 @@ const [{ uploader, game }, { prevHref, nextHref }] = await Promise.all([
 
 <Base
   title={s.title || "Shot"}
+  page="View Shot"
   description={s.description || undefined}
   image={new URL(`/image/${s.id}/embed`, Astro.url).href}
   ogType="website"

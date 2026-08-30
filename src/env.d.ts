@@ -16,6 +16,8 @@ declare global {
       env: Env;
       /** IANA zone for the visitor, for server-rendered dates. */
       timezone: string;
+      /** Analytics page name for Customer.io `page()` calls. */
+      page?: string;
       db: DB;
       cio: Cio;
       auth: Auth;

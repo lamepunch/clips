@@ -1,11 +1,12 @@
 import type { APIRoute } from "astro";
-import { eq } from "drizzle-orm";
-import { ClipStatus, clips } from "@/db/schema";
+import { first, sql } from "@/db/d1";
+import { ClipStatus } from "@/db/schema";
 import { verifyStreamWebhook } from "@/services/stream";
 import { badRequest, forbidden } from "@/utils/http";
 
 type StreamWebhookBody = {
   uid: string;
+  creator: string;
   status: { state: "ready" | "error" };
 };
 
@@ -13,38 +14,30 @@ type StreamWebhookBody = {
  * Verifies the HMAC signature, then sets the clip's status to READY or ERROR
  * based on the Stream uid in the webhook data.
  *
- * Responses: 403 (bad signature), 400 (malformed body / missing uid), 500 (DB
- * update failed — signals Stream to retry), 200 otherwise. Unmapped states and
- * unmatched uids are acked with 200 but logged so they don't disappear.
+ * Responses: 403 (bad signature), 400 (malformed body / missing uid), 200
+ * otherwise. A D1 failure throws and becomes 500 so Stream retries. Unmapped
+ * states and unmatched uids are acked with 200 but logged so they don't
+ * disappear.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-  const { db, env } = locals;
-  const rawBody = await request.text();
+  const { cio, env } = locals;
+  const raw = await request.text();
+  const sig = request.headers.get("Webhook-Signature");
 
-  const valid = await verifyStreamWebhook(
-    rawBody,
-    request.headers.get("Webhook-Signature"),
-    env.STREAM_WEBHOOK_SECRET,
-  );
-
-  if (!valid) {
-    return forbidden("Invalid signature");
-  }
+  // Verify the webhook signature
+  const valid = await verifyStreamWebhook(raw, sig, env.STREAM_WEBHOOK_SECRET);
+  if (!valid) return forbidden("Invalid signature");
 
   let body: StreamWebhookBody;
   try {
-    body = JSON.parse(rawBody) as StreamWebhookBody;
+    body = JSON.parse(raw);
   } catch (err) {
-    console.error("stream webhook: malformed JSON body", err);
+    console.error("webhook: malformed JSON body", err);
     return badRequest("Malformed body");
   }
 
-  const uid = body.uid;
+  const { uid, creator } = body;
   const state = body.status?.state;
-  if (!uid) {
-    console.error("stream webhook: missing uid", { state });
-    return badRequest("Missing uid");
-  }
 
   const status =
     state === "ready"
@@ -56,30 +49,27 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // A state we don't map (e.g. "inprogress", "queued") is expected; ack it so
   // Stream stops retrying, but log it so genuinely unexpected states surface.
   if (status === undefined) {
-    console.warn("stream webhook: unhandled state", { uid, state });
+    console.warn("stream: unhandled state", { uid, state });
     return new Response("ok", { status: 200 });
   }
 
-  let updated: { uid: string }[];
-  try {
-    updated = await db
-      .update(clips)
-      .set({ status })
-      .where(eq(clips.uid, uid))
-      .returning({ uid: clips.uid });
-  } catch (err) {
-    // Surface DB failures with a 5xx so Stream retries the delivery rather
-    // than the update being silently lost.
-    console.error("stream webhook: failed to update clip status", {
-      uid,
-      state,
-      err,
-    });
-    return new Response("Update failed", { status: 500 });
-  }
+  const clip = await first<{ id: string; uid: string }>(
+    sql`
+      update clips
+      set status = ${status}
+      where uid = ${uid} and status != ${status}
+      returning id, uid
+    `,
+  );
 
-  if (updated.length === 0) {
-    console.warn("stream webhook: no clip matched uid", { uid, state });
+  if (clip) {
+    cio.track({
+      userId: creator,
+      event: "Clip Updated",
+      properties: { id: clip.id, uid: clip.uid, state },
+    });
+  } else {
+    console.warn("stream: no clip status changed", { uid, state });
   }
 
   return new Response("ok", { status: 200 });

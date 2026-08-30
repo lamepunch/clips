@@ -26,7 +26,7 @@ const rows = (await db.select().from(table as never)) as Record<
 >[];
 ---
 
-<Base title={`Admin · ${name}`}>
+<Base title={`Admin · ${name}`} page="Admin Records">
   <p><a href="/admin" class="text-primary hover:underline">← Admin</a></p>
   <h1 class="text-2xl font-bold my-2">{name}</h1>
   <p class="mb-4">

@@ -23,7 +23,7 @@ const items =
     : shotItems(await userShots(db, u.id));
 ---
 
-<Base title={`${u.name}'s ${type} · Clips`}>
+<Base title={`${u.name}'s ${type} · Clips`} page="User Media">
   <section class="grid gap-4">
     <div>
       <a href={`/${u.slug}`} class="text-primary hover:underline">

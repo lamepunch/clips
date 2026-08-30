@@ -1,5 +1,5 @@
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { createAuthMiddleware } from "better-auth/api";
+import { createAuthMiddleware, getIp } from "better-auth/api";
 import { setCookieCache } from "better-auth/cookies";
 import { betterAuth } from "better-auth/minimal";
 import { admin } from "better-auth/plugins";
@@ -88,50 +88,48 @@ export function getAuth(env: Env, db: DB, cio: Cio) {
         const session = c.context.newSession;
         if (!session) return;
         const { id: userId, email, name, slug } = session.user;
+        const account = await db.query.account.findFirst({
+          where: and(
+            eq(schema.account.userId, userId),
+            eq(schema.account.providerId, "discord"),
+          ),
+        });
 
         // Admins are exempt so they can't be downgraded by guild changes.
         let role = session.user.role;
-        if (role !== "admin") {
-          const account = await db.query.account.findFirst({
-            where: and(
-              eq(schema.account.userId, userId),
-              eq(schema.account.providerId, "discord"),
-            ),
-          });
-
-          if (account?.accessToken) {
-            try {
-              role = await refreshGuildRole(
-                account.accessToken,
-                memberGuildIds,
-              );
-              await db
-                .update(schema.user)
-                .set({ role })
-                .where(eq(schema.user.id, userId));
-              // The cookie cache was written with the pre-refresh role, so
-              // rewrite it or the next 5 minutes authorize against the old one.
-              const cachedUser = { ...session.user, role };
-              await setCookieCache(
-                c,
-                { session: session.session, user: cachedUser },
-                false,
-              );
-            } catch (err) {
-              // Keep the previous role rather than failing a valid sign-in.
-              console.error("guild role refresh failed", err);
-            }
+        if (role !== "admin" && account?.accessToken) {
+          try {
+            role = await refreshGuildRole(account.accessToken, memberGuildIds);
+            await db
+              .update(schema.user)
+              .set({ role })
+              .where(eq(schema.user.id, userId));
+            // The cookie cache was written with the pre-refresh role, so
+            // rewrite it or the next 5 minutes authorize against the old one.
+            const cachedUser = { ...session.user, role };
+            await setCookieCache(
+              c,
+              { session: session.session, user: cachedUser },
+              false,
+            );
+          } catch (err) {
+            // Keep the previous role rather than failing a valid sign-in.
+            console.error("guild role refresh failed", err);
           }
         }
 
+        const ip = c.headers && getIp(c.headers, c.context.options);
+
         cio.identify({
           userId,
+          context: { ...(ip ? { ip } : {}) },
           traits: {
             email,
             name,
             slug,
             role,
             created_at: epochSeconds(session.user.createdAt),
+            ...(account ? { discord_id: account.accountId } : {}),
           },
         });
       }),

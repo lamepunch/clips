@@ -27,7 +27,7 @@ if (Astro.request.method === "POST") {
 const cols = getTableColumns(table);
 ---
 
-<Base title={`Admin · new ${name}`}>
+<Base title={`Admin · new ${name}`} page="New Record">
   <p>
     <a href={`/admin/${name}`} class="text-primary hover:underline">
       ← {name}
